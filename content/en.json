@@ -87,5 +87,10 @@
     "A NOTE TO SELF"
   ],
   "sticky": "Somehow I know quite a lot.<br>And somehow, nothing at all. 😭",
-  "roomSection": "Explore the office"
+  "roomSection": "Explore the office",
+  "scrollHint": "Scroll to step inside",
+  "exploreHint": "Tap a label or an object · Drag to look around",
+  "backToRoom": "Back to the room",
+  "spacesHeading": "Every object on the desk leads somewhere.",
+  "spacesLabel": "01 / MY SPACES"
 }

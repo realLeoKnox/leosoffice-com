@@ -1,12 +1,12 @@
 // Cloudflare Workers static-assets deployment for www.leosoffice.com.
 // Workers Builds runs `npx wrangler deploy`: build.command renders the pages,
-// bundles Three.js with esbuild, then ONLY ./dist is published.
+// Vite bundles React + react-three-fiber + Three.js; ONLY ./dist is published.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "leosoffice-com",
   "compatibility_date": "2026-10-01",
   "build": {
-    "command": "python3 scripts/build.py --bundle"
+    "command": "npm ci --no-audit --no-fund && npm run build"
   },
   "assets": {
     "directory": "./dist",

@@ -46,3 +46,12 @@ node --input-type=module --check < assets/scene.js
 - 舞台高度随视口：中文 `100svh - 300px`、英文 `100svh - 405px`（矮屏另有收紧）。1920×1080、1440×900、1280×720、1024×768、768×1024、390×844、360×740 下物件按钮都在首屏内（英/繁/简实测）。
 - 控制按钮、提示、选中入口移到画面下方的独立操作条，不再压在 3D 地板上；≤1000px 隐藏手写便签和英文标签，头像贴纸缩小放到角落；手机隐藏「拖动环顾」提示。
 - 画布四边 CSS 遮罩渐隐，镜头拉近时不再是硬直线裁切。
+
+## 2026-11-01 v2：React + Vite + react-three-fiber，滚动走进房间
+
+- 架构：`build.py` 渲染三语言静态 HTML 作为 Vite 入口；3D 层（React 19 + R3F 9 + three 0.186.1）懒加载；房间造型抽成 `buildRoom()`，与 v1 一致。
+- `npm test`：三语言 metadata / hreflang / 3D 数据 / 四张入口卡片 / 链接 / 无内联脚本与内联样式 / 50 个引用、404、CSP 与缓存头、旧 URL 跳转、sitemap、头像字节、指定文案、dist 无私有文件 —— 通过。
+- `wrangler deploy --dry-run`、本地 wrangler 模拟：/cn/index.html、/en/index.html 301；README、src、package.json 404；/static/ immutable、/assets/ 1 天。
+- 浏览器（SwiftShader WebGL，生产 CSP 头下）：1440×900 简、1280×720 英、768×1024 繁、390×844 英/繁、360×740 简——第一屏全景完整、滚动中标题淡出镜头推进、进入后四个标签贴在物件上、点标签聚焦并打开卡片（焦点移到「进去看看」）、Esc 关闭、从全景直接点物件会自动滚入并聚焦。无 CSP 违规；唯一控制台警告来自 R3F 内部（THREE.Clock 弃用提示）。
+- 降级：禁用 WebGL 时显示静态插画和入口卡片；减少动态效果偏好下镜头直接到位；键盘可聚焦标签并用 Enter 打开。
+- 未测：真机触屏手势与真实 GPU 帧率（SwiftShader 为软件渲染）。

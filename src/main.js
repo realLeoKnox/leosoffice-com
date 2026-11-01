@@ -1,4 +1,6 @@
-import {preferredLocale} from './language.mjs';
+import './style.css';
+import './office.css';
+import {preferredLocale} from './language.js';
 const menu=document.querySelector('.menu-button'),nav=document.querySelector('.nav');
 function closeMenu(){menu?.setAttribute('aria-expanded','false');nav?.classList.remove('open');}
 menu?.addEventListener('click',()=>{const open=menu.getAttribute('aria-expanded')!=='true';menu.setAttribute('aria-expanded',String(open));nav.classList.toggle('open',open);});
@@ -30,10 +32,17 @@ function selectObject(key){
 }
 officeButtons.forEach(button=>button.addEventListener('click',()=>selectObject(button.dataset.officeKey)));
 document.addEventListener('office-object',event=>selectObject(event.detail));
-document.querySelector('[data-reset]')?.addEventListener('click',()=>{document.querySelector('#room-link').hidden=true;});
 const copy=document.querySelector('[data-copy]'),status=document.querySelector('.copy-status');
 copy?.addEventListener('click',async()=>{try{await navigator.clipboard.writeText('leo@leosoffice.com');status.textContent=copy.dataset.success;}catch{status.textContent=copy.dataset.failure;}});
 const time=document.querySelector('[data-time]');
 function updateTime(){if(time)time.textContent=new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'Asia/Taipei'}).format(new Date())+' UTC+8';}
 updateTime();setInterval(()=>{if(!document.hidden)updateTime();},30000);
-if(document.querySelector('.room'))import('./scene.js?v=858a728e408b').catch(()=>{const room=document.querySelector('.room');room.dataset.unavailable='true';document.querySelector('.room-caption').textContent=room.dataset.fallback;document.querySelector('.room-controls').hidden=true;});
+// 3D office: only when WebGL is available; otherwise the static illustration stays.
+const officeRoot=document.querySelector('#office-root');
+function webgl(){try{const c=document.createElement('canvas');return !!(c.getContext('webgl2')||c.getContext('webgl'));}catch{return false;}}
+if(officeRoot&&webgl()){
+ import('./office/mount.jsx').then(({mountOffice})=>{
+  const fail=mountOffice(officeRoot);
+  officeRoot.addEventListener('webglcontextlost',fail,{once:true,capture:true});
+ }).catch(()=>{officeRoot.dataset.unavailable='true';});
+}

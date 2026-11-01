@@ -87,5 +87,10 @@
     "寫給自己的便箋"
   ],
   "sticky": "好像會的挺多，<br>但又好像啥都不會。😭",
-  "roomSection": "探索辦公室"
+  "roomSection": "探索辦公室",
+  "scrollHint": "向下捲動，走進房間",
+  "exploreHint": "點標籤或物件看看 · 拖動環顧",
+  "backToRoom": "回到房間",
+  "spacesHeading": "桌上的每樣東西，都有一個去處。",
+  "spacesLabel": "01 / 我的空間"
 }

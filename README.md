@@ -1,76 +1,50 @@
-# Leo’s Office — 一个可以探索的小办公室
+# Leo’s Office — 滚动走进一间小办公室
 
-leosoffice.com 新版。浅纸色背景、低多边形房间、木桌、蓝椅和个人头像贴纸；通过 Three.js 的正交摄像机探索内容。仓库 `realLeoKnox/leosoffice-com`，Cloudflare Workers 静态资源（Worker `leosoffice-com`）部署，见「部署（2026-11-01）」。
+www.leosoffice.com。第一屏是标题和一整间低多边形小办公室；向下滚动，镜头推进房间、画面占满屏幕；进入后电脑、书本、台灯、主机常驻标签，点标签或物件就走近看，并弹出说明卡片和入口。
 
-## 本地运行
-
-双击 `preview.command`。它会生成发布目录，然后在 `http://127.0.0.1:5682/zh-hans/` 打开简体预览。退出时在终端按 Ctrl+C。
-
-也可在此目录执行：
-
-```sh
-python3 scripts/build.py
-python3 -m http.server 5682 --bind 127.0.0.1 --directory dist
-```
-
-使用本地 HTTP 服务访问，不能双击 index.html 代替 HTTP；ES modules 需要正常的模块加载环境。
-
-## 内容与交互
-
-- 电脑 → www.leoknox.dev，书本 → www.leoknox.me，台灯 → aploa.com，主机 → agent.leoknox.us。
-- 鼠标悬停抬起物件，点击后镜头平滑靠近；显示对应名称、介绍和入口链接。点击外链前不会自动离开页面。
-- 鼠标拖动改变有限角度的视角。左右视角、回到全景和暂停按钮也可用键盘操作。触屏纵向保持页面滚动，横向拖动可环顾，也可通过物件点击或按钮探索。
-- 房间静止后停止渲染；不使用持续的环境动画。画面离屏、标签隐藏、手动暂停时停止更新。减少动态效果偏好下，镜头直接到位。
-- WebGL 初始化失败或上下文丢失时显示本地 SVG 插画；四个常规站点链接始终保留。没有 JS 时正文、旧书签和链接仍可访问。
-- 保留个人头像原文件、原站买 VPS 的经历、两句指定文案，以及旧图床、博客、Vaultwarden 入口。统一联系邮箱 `leo@leosoffice.com`，不自动发送邮件。
-- 站点是入口汇总，没有添加具体项目仓库外链。链接来源于用户已提供的信息和当前旧站，外部服务可用性未逐一验收。
+- 电脑 → www.leoknox.dev　书本 → www.leoknox.me　台灯 → aploa.com　主机 → agent.leoknox.us
+- 联系：leo@leosoffice.com，Telegram @leospmbot，NodeSeek。保留原站买 VPS 的往事、指定文案与旧书签（图床、博客、Vaultwarden）。
 
 ## 技术
 
-Three.js **0.186.1 / r186** 来自 npm 官方包，MIT 许可证随 `assets/vendor/LICENSE` 提供。所有运行资源本地保存，不依赖 CDN、远程字体、贴图或模型。房间由原生几何、材质、灯光和本地产生的 CanvasTexture 构建。
+| 层 | 做什么 |
+| --- | --- |
+| `scripts/build.py`（Python 标准库） | 从 `content/*.json` 渲染三语言静态 HTML + 404（SEO、无 JS 也能读、四张入口卡片），作为 Vite 的多页面入口；生成 `public/` 下的 robots、sitemap、`_headers`（CSP 哈希）、`_redirects` |
+| Vite 8 + React 19 + @react-three/fiber 9 + three 0.186.1 | `src/main.js` 处理菜单、语言建议、复制邮箱、时钟；检测到 WebGL 后**懒加载** `src/office/` 的 3D 层 |
+| `src/office/room.js` | `buildRoom()`：房间造型（原生几何体 + 本地 CanvasTexture，无外部模型/贴图） |
+| `src/office/framing.js` | 取景：把一组 3D 点按相机姿态投影，算出让它落在屏幕指定区域的正交视锥 |
+| `src/office/Office.jsx` | 滚动进度 → 镜头（全景 → 室内 → 聚焦），阻尼插值；HTML 标签每帧贴在物件上；拖动环顾；卡片；Esc 关闭 |
 
-使用 OrthographicCamera、Raycaster、MeshStandardMaterial、PCFShadowMap 和按需 requestAnimationFrame。设备像素比上限 1.6；没有后处理、视频背景或第三方模型加载。Three.js 官方构建约 2MB 未压缩，生产静态托管应启用平台自带的 gzip/Brotli；本次未进行生产网络性能测量。
+渲染按需进行（`frameloop="demand"`）：只在滚动、拖动、悬停或镜头尚未停稳时绘制，静止时不占 GPU。
 
-网页运行无需框架、Node 包安装或服务端。生成器只需 Python 标准库。`scripts/create_social_images.py` 是可选的分享图生成源，需要 Pillow 和 macOS 字体；已附生成后的 PNG，正常构建无需运行它。
+**体积**：首屏 JS 约 6 KB（gzip 2 KB）；3D 层单独一个块，约 1.15 MB / gzip 316 KB（three + React + R3F），在首屏 HTML/CSS 之后加载。
+
+**降级**：无 WebGL → 保留静态插画和四张入口卡片；WebGL 上下文丢失 / 渲染出错 → 回到静态模式；`prefers-reduced-motion` → 镜头直接到位、无提示动画；无 JS → 普通页面。
+
+**CSP**：`script-src 'self'` + JSON-LD 哈希，`style-src 'self'`（无 `unsafe-inline`；React/R3F 通过 CSSOM 设置样式不受限）。已在 wrangler 本地模拟的生产响应头下实测无违规。
+
+## 本地开发
+
+```sh
+npm install
+npm run dev        # 渲染页面 + Vite 开发服务器（热更新）：http://127.0.0.1:5682/zh-hans/
+npm run build      # 渲染页面 + 生产构建到 dist/
+npm run preview    # 预览 dist/
+npm test           # 检查 dist/（先 build）
+npx wrangler dev   # 用 Cloudflare 的方式本地运行 dist/（_headers、_redirects、真实 404）
+```
+
+或双击 `preview.command`（首次自动 `npm install`，然后 `npm run dev` 并打开浏览器）。
+
+文案在 `content/*.json`；页面骨架在 `scripts/build.py`；样式在 `src/style.css`（全站）与 `src/office.css`（舞台、标签、卡片、入口卡片）。不要直接改生成的 `index.html`、`zh-hans/`、`zh-hant/`、`404.html`、`public/_headers` 等。
+
+## 部署
+
+- `wrangler.jsonc`（Worker `leosoffice-com`）：`npm ci && npm run build`，只发布 `dist/`；`not_found_handling: "404-page"`。
+- 缓存：Vite 产物在 `/static/`（文件名带哈希，1 年 immutable）；`/assets/`（头像、图标、分享图）1 天 + stale-while-revalidate。
+- `_redirects`：旧站 `/cn/`、`/cn/index.html` → `/zh-hans/`，`/en/`、`/en/index.html` → `/`，`/favicon.ico` → svg。
+- Cloudflare 后台：用本仓库建 Worker → 把 `www.leosoffice.com` 自定义域名移过来 → 按 `cloudflare-redirect-rule.json` 加裸域 → www 的 301，并开 Always Use HTTPS。
 
 ## 多语言与 SEO
 
-- `/` 默认英文。
-- `/zh-hant/` 繁體中文。
-- `/zh-hans/` 简体中文。
-
-顶部语言切换保留页面锚点。浏览器语言仅显示切换建议，不强制跳转；显式选择保存在本地。正文和交互文字按语言生成静态 HTML。
-
-每版包含 title、description、lang、独立 canonical、互相对应的 hreflang 与 x-default、Open Graph、Twitter Card、1200×630 PNG 分享图、ProfilePage / Person JSON-LD。另有 robots、sitemap 和 noindex 404。
-
-主地址沿用 **https://www.leosoffice.com/**。`_redirects` 仅准备 `/cn/` 到 `/zh-hans/`、`/en/` 到 `/` 及 index.html 规范化规则。`cloudflare-redirect-rule.json` 是日后手动配置 apex / HTTP 跳转的参考，文件本身不执行任何云端修改。Python 本地服务不会应用 Cloudflare `_headers` 或 `_redirects`。
-
-## 修改与检查
-
-文案在 `content/*.json`；布局生成器在 `scripts/build.py`；样式在 `assets/style.css`；房间、摄像机与交互在 `assets/scene.js`，普通 UI 在 `assets/main.js`。
-
-```sh
-python3 scripts/build.py
-python3 tests/check_site.py
-node --input-type=module --check < assets/main.js
-node --input-type=module --check < assets/scene.js
-```
-
-生成器会重新写入三语言页面、JSON-LD / CSP hash 与 `dist/`。未来静态托管只上传 **dist/** 内容；源码字典、测试、文档和 preview.command 不必公开。真实上线后另行检查托管安全头、域名跳转、HTTPS、真机表现和搜索引擎收录。
-
-## 部署（2026-11-01）
-
-- `wrangler.jsonc`（Worker `leosoffice-com`）：`wrangler deploy` 先运行 `python3 scripts/build.py --bundle`，只发布 `dist/`。
-- `--bundle`：用 esbuild 0.28.2（`npx`）把 `scene.js` 与 Three.js 打包压缩为一个模块，dist 中删除未打包的 vendor 文件（保留 LICENSE 与 version.json）。首页加载约 2.25 MB → 0.6 MB；gzip 后 Three 部分约 423 KB → 149 KB。不带 `--bundle` 时仍是纯 Python 标准库构建，适合本地预览。
-- CSP 去掉 `style-src 'unsafe-inline'`（页面无内联样式，Three.js 通过 CSSOM 改样式，不受影响；已在严格 CSP 下浏览器实测），增加 `X-Frame-Options: DENY`；`/assets/*` 缓存 1 天 + stale-while-revalidate 7 天。
-- `_redirects`：旧站 `/cn/index.html` → `/zh-hans/`、`/en/index.html` → `/`（旧首页 JS 跳转的目标，旧书签与外链不会 404）；`/favicon.ico` → svg。
-- `not_found_handling: "404-page"`；404 页改用根路径绝对引用，任意深度都有样式。
-- 兄弟站点链接直接指向 `https://www.leoknox.dev/`、`https://www.leoknox.me/`（物件按钮的 `data-url`）；Telegram 统一为 `@leospmbot`；JSON-LD Person 增加 `sameAs`。
-
-- 视图：相机按房间包围盒自动取景；舞台高度随视口（中/英分别计算），首屏可见物件按钮；控制条在画面下方；小屏收起装饰；画布边缘渐隐。
-
-### Cloudflare 后台
-
-1. 用本仓库新建 Worker（名称 `leosoffice-com`，部署命令 `npx wrangler deploy`）。
-2. 把自定义域名 `www.leosoffice.com` 从旧项目移到新 Worker。
-3. leosoffice.com 当前裸域返回 502：按 `cloudflare-redirect-rule.json` 建 301（根域名 → `https://www.leosoffice.com` 同路径），并确认 Always Use HTTPS 已开。
+`/` 英文，`/zh-hant/` 繁體，`/zh-hans/` 简体；各自 canonical、互相对应的 hreflang 与 x-default、Open Graph / Twitter、1200×630 分享图、ProfilePage / Person JSON-LD（含 `sameAs`）；robots、sitemap、noindex 404。浏览器语言只显示切换建议，不强制跳转。

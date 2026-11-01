@@ -87,5 +87,10 @@
     "写给自己的便笺"
   ],
   "sticky": "好像会的挺多，<br>但又好像啥都不会。😭",
-  "roomSection": "探索办公室"
+  "roomSection": "探索办公室",
+  "scrollHint": "向下滚动，走进房间",
+  "exploreHint": "点标签或物件看看 · 拖动环顾",
+  "backToRoom": "回到房间",
+  "spacesHeading": "桌上的每样东西，都有一个去处。",
+  "spacesLabel": "01 / 我的空间"
 }

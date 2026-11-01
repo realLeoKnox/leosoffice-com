@@ -1,23 +1,13 @@
-import * as THREE from './vendor/three.module.js';
-const host=document.querySelector('.room');
-const reduced=matchMedia('(prefers-reduced-motion: reduce)');
-const small=matchMedia('(max-width:700px)');
-const pause=document.querySelector('button[data-motion]');
-let renderer;
-try{renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'low-power'});}catch{fallback();}
-function fallback(){host.dataset.unavailable='true';host.dataset.ready='false';document.querySelector('.room-caption').textContent=host.dataset.fallback;document.querySelector('.room-controls').hidden=true;}
-if(renderer)buildOffice();
-function buildOffice(){
- renderer.setClearColor(0xf4f1e8,0);renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.6));renderer.outputColorSpace=THREE.SRGBColorSpace;
- renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.0;
- renderer.domElement.setAttribute('aria-hidden','true');host.prepend(renderer.domElement);
- const scene=new THREE.Scene();
- const camera=new THREE.OrthographicCamera(-5,5,3,-3,.1,50);
- const world=new THREE.Group();scene.add(world);
- scene.add(new THREE.HemisphereLight(0xfffcf0,0xa8b9b2,1.75));
+import * as THREE from 'three';
+
+// The low-poly office, modelled from primitives and local CanvasTextures (no external assets).
+// Returns plain three.js objects; React Three Fiber mounts them with <primitive>.
+export function buildRoom(){
+ const world=new THREE.Group();const lights=new THREE.Group();
+ lights.add(new THREE.HemisphereLight(0xfffcf0,0xa8b9b2,1.75));
  const sun=new THREE.DirectionalLight(0xfff0cf,2.8);sun.position.set(-3,7,5);sun.castShadow=true;
- sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-6;sun.shadow.camera.right=6;sun.shadow.camera.top=6;sun.shadow.camera.bottom=-6;sun.shadow.camera.near=.1;sun.shadow.camera.far=20;sun.shadow.normalBias=.04;sun.shadow.bias=-.00015;sun.shadow.radius=3;scene.add(sun);
- const fill=new THREE.DirectionalLight(0xd2e6fa,1.0);fill.position.set(5,3,-3);scene.add(fill);
+ sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-6;sun.shadow.camera.right=6;sun.shadow.camera.top=6;sun.shadow.camera.bottom=-6;sun.shadow.camera.near=.1;sun.shadow.camera.far=20;sun.shadow.normalBias=.04;sun.shadow.bias=-.00015;sun.shadow.radius=3;lights.add(sun);
+ const fill=new THREE.DirectionalLight(0xd2e6fa,1.0);fill.position.set(5,3,-3);lights.add(fill);
  const materials={
   floor:mat('#d4d9c9'),wall:mat('#b9cfdf'),side:mat('#d1deca'),wood:mat('#dfb98c'),woodEdge:mat('#bb946c'),cream:mat('#faf0d8'),dark:mat('#475856'),metal:mat('#7b8f85'),screen:mat('#314946'),green:mat('#8c9e6f'),leaf:mat('#72916c'),clay:mat('#cb8064'),pink:mat('#dbb4a3'),blue:mat('#83a9c6'),yellow:mat('#e4ba67'),paper:mat('#f9f0d8'),rug:mat('#e7c5ab'),white:mat('#f0eee2'),black:mat('#4a514c')
  };
@@ -111,64 +101,8 @@ function buildOffice(){
  // A small poster in the back wall with the user's own initial.
  const poster=rounded(.72,.9,.03,.015,materials.cream,.48,3,-2.045);const mark=box(.035,.38,.015,materials.clay,.36,3,-2.02);box(.27,.035,.015,materials.clay,.48,2.83,-2.02);
  for(const [key,obj] of Object.entries(interactives)){obj.group.traverse(child=>{if(child.isMesh){child.userData.officeKey=key;pickables.push(child);}});}
- const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2(4,4),currentTarget=new THREE.Vector3(0,1.45,0),target=new THREE.Vector3(0,1.45,0);
  const focusTargets={dev:new THREE.Vector3(-.1,1.7,-.4),me:new THREE.Vector3(-.9,1.5,0),aploa:new THREE.Vector3(.8,1.75,-.5),agent:new THREE.Vector3(.8,.7,.9)};
- let yaw=.78,targetYaw=.78,pitch=.61,targetPitch=.61,zoom=1,targetZoom=1,selected='',hover='',down=null,dragged=false;
- let paused=false,onScreen=true,contextLost=false,raf=0,last=0,frames=0,settleFrames=0;
- let cssWidth=1,cssHeight=1;
- function setCursor(key){const changed=hover!==key;hover=key;host.toggleAttribute('data-hover',!!key);if(changed)wake();}
- function pick(event){const r=host.getBoundingClientRect();pointer.set((event.clientX-r.left)/r.width*2-1,1-(event.clientY-r.top)/r.height*2);raycaster.setFromCamera(pointer,camera);return raycaster.intersectObjects(pickables,false)[0]?.object.userData.officeKey||'';}
- host.addEventListener('pointermove',event=>{
-  if(event.pointerType==='touch'&&!down)return;
-  if(down&&event.pointerId===down.id){
-   const dx=event.clientX-down.x,dy=event.clientY-down.y;
-   if(Math.abs(dx)>6||Math.abs(dy)>6)dragged=true;
-   if(event.pointerType==='mouse'||Math.abs(dx)>Math.abs(dy)*1.3){targetYaw=THREE.MathUtils.clamp(down.yaw-dx*.006,.16,1.4);if(event.pointerType==='mouse')targetPitch=THREE.MathUtils.clamp(down.pitch+dy*.003,.36,.9);wake();}
-  }else setCursor(pick(event));
- },{passive:true});
- host.addEventListener('pointerleave',()=>{setCursor('');down=null;},{passive:true});
- host.addEventListener('pointerdown',event=>{down={id:event.pointerId,x:event.clientX,y:event.clientY,yaw:targetYaw,pitch:targetPitch};dragged=false;},{passive:true});
- host.addEventListener('pointerup',event=>{if(!dragged){const key=pick(event);if(key)document.dispatchEvent(new CustomEvent('office-object',{detail:key}));}down=null;},{passive:true});
- host.addEventListener('pointercancel',()=>{down=null;},{passive:true});
- document.addEventListener('office-focus',event=>{
-  selected=event.detail;target.copy(focusTargets[selected]||new THREE.Vector3(0,1.45,0));targetZoom=selected?1.3:1;
-  targetYaw=selected==='agent'?.72:.78;targetPitch=selected==='agent'?.46:.61;
-  if(reduced.matches||paused)snap();wake();host.dataset.selected=selected||'overview';
- });
- document.querySelectorAll('[data-turn]').forEach(button=>button.addEventListener('click',()=>{targetYaw=THREE.MathUtils.clamp(targetYaw+Number(button.dataset.turn)*.22,.16,1.4);if(reduced.matches||paused)snap();wake();}));
- document.querySelector('[data-reset]')?.addEventListener('click',()=>{selected='';target.set(0,1.45,0);targetZoom=1;targetYaw=.78;targetPitch=.61;if(reduced.matches||paused)snap();wake();host.dataset.selected='overview';});
- function snap(){yaw=targetYaw;pitch=targetPitch;zoom=targetZoom;currentTarget.copy(target);draw();}
- function draw(){
-  camera.position.set(currentTarget.x+Math.sin(yaw)*Math.cos(pitch)*10,currentTarget.y+Math.sin(pitch)*10,currentTarget.z+Math.cos(yaw)*Math.cos(pitch)*10);camera.lookAt(currentTarget);
-  camera.zoom=zoom;camera.updateProjectionMatrix();renderer.render(scene,camera);frames++;host.dataset.frames=String(frames);host.dataset.view=yaw.toFixed(3)+','+pitch.toFixed(3)+','+zoom.toFixed(3);
- }
- function controls(){pause.disabled=reduced.matches||contextLost;pause.setAttribute('aria-pressed',String(!paused&&!reduced.matches));pause.textContent=reduced.matches?'○':paused?'▷':'Ⅱ';pause.setAttribute('aria-label',reduced.matches?pause.dataset.reduced:paused?pause.dataset.resume:pause.dataset.pause);host.dataset.motion=contextLost?'unavailable':reduced.matches?'reduced':paused?'paused':onScreen&&!document.hidden?'running':'suspended';}
- function allowed(){return !paused&&!reduced.matches&&!contextLost&&onScreen&&!document.hidden;}
- function tick(now){
-  raf=0;if(!allowed())return;
-  const dt=last?Math.min((now-last)/1000,.05):.016;last=now;
-  const k=1-Math.exp(-dt*5);yaw+=(targetYaw-yaw)*k;pitch+=(targetPitch-pitch)*k;zoom+=(targetZoom-zoom)*k;currentTarget.lerp(target,k);
-  let active=false;
-  for(const [key,obj]of Object.entries(interactives)){const destination=hover===key?.08:0;obj.hover+=(destination-obj.hover)*k;obj.group.position.y=obj.base+obj.hover;if(Math.abs(destination-obj.hover)>.001)active=true;}
-  const unsettled=Math.abs(yaw-targetYaw)+Math.abs(pitch-targetPitch)+Math.abs(zoom-targetZoom)+currentTarget.distanceTo(target)>.001;
-  if(unsettled||active||settleFrames<3){draw();settleFrames++;} // The still room uses no continuous render loop.
-  if(unsettled||active||settleFrames<3)raf=requestAnimationFrame(tick);else last=0;
- }
- function wake(){if(raf)cancelAnimationFrame(raf);raf=0;last=0;settleFrames=0;if(allowed())raf=requestAnimationFrame(tick);controls();}
- host.addEventListener('pointermove',()=>{if(hover)wake();},{passive:true});host.addEventListener('pointerleave',wake,{passive:true});
- // Fit the frustum to the room's projected bounds (over the usual drag range) so it is never clipped at any aspect.
- const fit=(()=>{const box=new THREE.Box3().setFromObject(world),c=[];for(const x of[box.min.x,box.max.x])for(const y of[box.min.y,box.max.y])for(const z of[box.min.z,box.max.z])c.push(new THREE.Vector3(x,y,z));
-  const probe=new THREE.OrthographicCamera(),o=new THREE.Vector3(0,1.45,0);let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;
-  for(const yw of[.64,.78,.92])for(const pt of[.57,.61,.65]){probe.position.set(Math.sin(yw)*Math.cos(pt)*10,o.y+Math.sin(pt)*10,Math.cos(yw)*Math.cos(pt)*10);probe.lookAt(o);probe.updateMatrixWorld();
-   for(const v of c){const q=v.clone().applyMatrix4(probe.matrixWorldInverse);x0=Math.min(x0,q.x);x1=Math.max(x1,q.x);y0=Math.min(y0,q.y);y1=Math.max(y1,q.y);}}
-  return {cx:(x0+x1)/2,cy:(y0+y1)/2,w:x1-x0,h:y1-y0};})();
- function resize(){cssWidth=host.clientWidth;cssHeight=host.clientHeight;if(!cssWidth||!cssHeight)return;renderer.setSize(cssWidth,cssHeight,false);const aspect=cssWidth/cssHeight,pad=small.matches?1.02:1.03;let w=fit.w*pad,h=fit.h*pad;if(w/h<aspect)w=h*aspect;else h=w/aspect;camera.left=fit.cx-w/2;camera.right=fit.cx+w/2;camera.top=fit.cy+h/2;camera.bottom=fit.cy-h/2;camera.updateProjectionMatrix();draw();wake();}
- const ro=new ResizeObserver(resize);ro.observe(host);
- const io=new IntersectionObserver(entries=>{onScreen=entries[0].isIntersecting;wake();},{threshold:.03});io.observe(host);
- pause.addEventListener('click',()=>{paused=!paused;if(paused)snap();wake();});
- reduced.addEventListener('change',()=>{snap();wake();});document.addEventListener('visibilitychange',wake);
- renderer.domElement.addEventListener('webglcontextlost',event=>{event.preventDefault();contextLost=true;fallback();wake();});
- renderer.domElement.addEventListener('webglcontextrestored',()=>{contextLost=false;delete host.dataset.unavailable;host.dataset.ready='true';document.querySelector('.room-controls').hidden=false;resize();});
- window.addEventListener('pagehide',()=>{if(raf)cancelAnimationFrame(raf);raf=0;});window.addEventListener('pageshow',wake);
- host.dataset.engine='Three.js '+THREE.REVISION;host.dataset.camera='OrthographicCamera';host.dataset.ready='true';host.dataset.selected='overview';resize();controls();
+ // Label anchors sit just above each object, in world space.
+ const anchors={dev:new THREE.Vector3(-.1,2.5,-.6),me:new THREE.Vector3(-1.13,2.05,-.02),aploa:new THREE.Vector3(.98,2.55,-.62),agent:new THREE.Vector3(1.13,.95,1.2)};
+ return {world,lights,interactives,pickables,focusTargets,anchors};
 }

@@ -1,0 +1,25 @@
+{
+  "name": "leosoffice-com",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "description": "Leo's Office — scroll into a small 3D office (React + Vite + react-three-fiber)",
+  "scripts": {
+    "pages": "python3 scripts/build.py",
+    "dev": "python3 scripts/build.py && vite",
+    "build": "python3 scripts/build.py && vite build",
+    "preview": "vite preview --port 5682",
+    "test": "python3 tests/check_site.py"
+  },
+  "engines": { "node": ">=20.19" },
+  "dependencies": {
+    "@react-three/fiber": "9.8.2",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "6.1.2",
+    "vite": "8.3.5"
+  }
+}

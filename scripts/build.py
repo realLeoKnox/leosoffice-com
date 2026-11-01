@@ -1,62 +1,91 @@
 #!/usr/bin/env python3
-"""Render three static language versions and a deployment-only dist (stdlib)."""
-from pathlib import Path
-import html,json,hashlib,base64,re,shutil
-ROOT=Path(__file__).resolve().parents[1]
-BASE='https://www.leosoffice.com/'
-TELEGRAM='https://t.me/leospmbot'
-# Link targets for the four desk objects; sibling sites are canonical on www.
-URLS={'leoknox.dev':'https://www.leoknox.dev/','leoknox.me':'https://www.leoknox.me/','aploa.com':'https://aploa.com/','agent.leoknox.us':'https://agent.leoknox.us/'}
-import sys,subprocess
-BUNDLE='--bundle' in sys.argv
-LOCALES={'en':('', 'en_US'),'zh-Hant':('zh-hant/','zh_TW'),'zh-Hans':('zh-hans/','zh_CN')}
-E=html.escape
-icon='''<svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><path d="M8 7v26h24" stroke="currentColor" stroke-width="2"/><circle cx="27" cy="14" r="5" fill="#ff9b71"/><ellipse cx="27" cy="14" rx="10" ry="3" transform="rotate(-35 27 14)" stroke="#ff9b71"/></svg>'''
-# Version the room module and its parent entry point together.
-main_path=ROOT/'assets/main.js'
-scene_version=hashlib.sha256((ROOT/'assets/scene.js').read_bytes()+(ROOT/'assets/vendor/version.json').read_bytes()+(b'bundle' if BUNDLE else b'')).hexdigest()[:12]
-main_path.write_text(re.sub(r"scene\.js\?v=[a-zA-Z0-9-]+",'scene.js?v='+scene_version,main_path.read_text()))
-all_hashes=[]
-for lang,(prefix,oglocale) in LOCALES.items():
- d=json.loads((ROOT/'content'/f'{lang}.json').read_text());up='../' if prefix else './'; asset=up+'assets/'
- schema={'@context':'https://schema.org','@type':'ProfilePage','url':BASE+prefix,'name':d['title'],'description':d['description'],'inLanguage':lang,'mainEntity':{'@type':'Person','name':'Leo Knox','url':BASE,'image':BASE+'assets/leo-avatar.jpg','email':'leo@leosoffice.com','sameAs':[TELEGRAM,URLS['leoknox.dev'],URLS['leoknox.me']]}}
- ld=json.dumps(schema,ensure_ascii=False,separators=(',',':'));all_hashes.append("'sha256-"+base64.b64encode(hashlib.sha256(ld.encode()).digest()).decode()+"'")
- alternates=''.join(f'<link rel="alternate" hreflang="{l}" href="{BASE+p}">' for l,(p,_) in LOCALES.items())+f'<link rel="alternate" hreflang="x-default" href="{BASE}">'
- languages=''.join(f'<a data-language="{l}" lang="{l}" hreflang="{l}" href="{up+p}"'+(' aria-current="page"' if l==lang else '')+'>'+{'en':'EN','zh-Hant':'繁','zh-Hans':'简'}[l]+'</a>' for l,(p,_) in LOCALES.items())
- mainhash=hashlib.sha256((ROOT/'assets/main.js').read_bytes()).hexdigest()[:10];stylehash=hashlib.sha256((ROOT/'assets/style.css').read_bytes()).hexdigest()[:10]
- head=f'''<!doctype html><html lang="{lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f4f1e8"><title>{E(d['title'])}</title><meta name="description" content="{E(d['description'],quote=True)}"><link rel="canonical" href="{BASE+prefix}">{alternates}<meta property="og:type" content="website"><meta property="og:site_name" content="Leo’s Office"><meta property="og:title" content="{E(d['title'],quote=True)}"><meta property="og:description" content="{E(d['description'],quote=True)}"><meta property="og:url" content="{BASE+prefix}"><meta property="og:locale" content="{oglocale}"><meta property="og:image" content="{BASE}assets/og-{lang}.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="{E(d['title'],quote=True)}"><meta name="twitter:description" content="{E(d['description'],quote=True)}"><meta name="twitter:image" content="{BASE}assets/og-{lang}.png"><link rel="icon" href="{asset}favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="{asset}style.css?v={stylehash}"><script type="application/ld+json">{ld}</script><script type="module" src="{asset}main.js?v={mainhash}"></script></head>'''
- nav=''.join(f'<a href="#{target}">{E(text)}</a>' for target,text in zip(['spaces','story','contact'],d['nav']))
- bookmarks=''.join(f'<a href="{url}">{E(label)} ↗</a>' for url,label in zip(['https://image.nimama.de/','https://wp.leoknox.de/','https://key.leoknox.de/'],d['bookmarkNames']))
- tabs=''.join(f'<button data-office-key="{key}" aria-pressed="{str(i==0).lower()}" data-name="{E(d["cards"][i][0],quote=True)}" data-description="{E(d["cards"][i][1],quote=True)}" data-domain="{domain}" data-url="{URLS[domain]}"><span aria-hidden="true">{symbol}</span>{d["tabs"][i]}</button>' for i,(key,domain,symbol) in enumerate(zip(['dev','me','aploa','agent'],['leoknox.dev','leoknox.me','aploa.com','agent.leoknox.us'],['▱','▥','⌁','▤'])))
- site_links=''.join(f'<a href="{URLS[domain]}">{domain} ↗</a>' for domain in ['leoknox.dev','leoknox.me','aploa.com','agent.leoknox.us'])
- story=''.join(f'<p data-chapter="{E(d["chapters"][i],quote=True)}">{E(text)}</p>' for i,text in enumerate(d['story']))
- body=f'''<body><a class="skip" href="#main">{d['skip']}</a><div class="wrap"><header class="site-header"><a class="wordmark" href="./" aria-label="Leo’s Office">{icon}<span>Leo’s <i>Office.</i></span></a><div class="header-right"><nav class="nav" id="nav" aria-label="{d['menu']}">{nav}</nav><div class="languages" aria-label="{d['language']}">{languages}</div><button class="menu-button" aria-expanded="false" aria-controls="nav" aria-label="{d['menu']}">☰</button></div></header></div><div class="language-notice" hidden><a id="language-suggestion" href="./"></a><button data-dismiss-language aria-label="{d['dismiss']}">×</button></div><main id="main" class="wrap"><section class="hero" aria-labelledby="hero-title"><div class="hero-heading"><p class="hello">{d['hello']}</p><h1 id="hero-title">{d['heroTitle']}</h1><p class="hero-intro">{d['heroSubtitle']}</p></div><div class="room-wrap"><div class="room" data-fallback="{d['fallback']}" role="img" aria-label="{d['sceneDesc']}"><img class="room-fallback" src="{asset}office-fallback.svg" alt="" width="1000" height="650"><span class="sr-only">{d['sceneDesc']}</span></div><p class="room-note">{d['roomNote']}</p><div class="avatar-sticker"><img src="{asset}leo-avatar.jpg" alt="{d['avatarAlt']}" width="79" height="79"><small>Leo was here.</small></div><span class="room-tag" aria-hidden="true">{d['sceneLabel']}</span><div class="room-controls"><button data-turn="-1" aria-label="{d['turnLeft']}">↶</button><button data-turn="1" aria-label="{d['turnRight']}">↷</button><button class="reset" data-reset>{d['reset']}</button><button class="motion" data-motion data-pause="{d['pause']}" data-resume="{d['resume']}" data-reduced="{d['reduced']}" aria-label="{d['pause']}" aria-pressed="true">Ⅱ</button></div><a class="room-selection" id="room-link" href="{URLS['leoknox.dev']}" hidden><span id="room-selection-title"></span> ↗</a><p class="room-caption">{d['roomHint']}</p></div></section><section class="spaces" id="spaces" aria-label="{d['roomSection']}"><div class="space-tabs" role="group" aria-label="{d['roomSection']}">{tabs}</div><div class="space-detail" aria-live="polite"><div><p class="detail-label">ON THE DESK / <span id="detail-domain">leoknox.dev</span></p><h2 id="detail-title">{d['cards'][0][0]}</h2></div><p id="detail-description">{d['cards'][0][1]}</p><a class="visit-link" id="detail-link" href="{URLS['leoknox.dev']}">{d['visit']} <span aria-hidden="true">↗</span></a></div><div class="all-sites">{site_links}</div><details class="bookmarks"><summary>{d['bookmarks']}</summary><div class="bookmark-links">{bookmarks}</div></details></section><section class="story" id="story" aria-labelledby="story-title"><div class="story-intro"><div><p class="section-label">{d['storyLabel']}</p><h2 id="story-title">{d['storyHeading']}</h2></div><aside class="sticky-note"><p>{d['sticky']}</p><div class="signature">— Leo</div></aside></div><div class="story-text">{story}</div></section><div class="quote-strip"><span class="little-star" aria-hidden="true">✳</span><span>{d['intro'].replace('<br>',' ')}<br>{d['note'].replace('<br>',' ')}</span><span class="little-star" aria-hidden="true">✳</span></div><section class="contact" id="contact" aria-labelledby="contact-title"><div><p class="section-label">{d['contactLabel']}</p><h2 id="contact-title">{d['contactHeading']}</h2><p>{d['contactNote']}</p></div><div><a class="email" href="mailto:leo@leosoffice.com">leo@leosoffice.com <span aria-hidden="true">↗</span></a><div class="contact-links"><div><a href="{TELEGRAM}">Telegram @leospmbot ↗</a> &nbsp; / &nbsp; <a href="https://www.nodeseek.com/notification#/message?mode=talk&amp;to=26676">NodeSeek ↗</a></div><button class="copy-email" data-copy data-success="{d['copySuccess']}" data-failure="{d['copyFailure']}">{d['copy']}</button></div><div class="copy-status" role="status" aria-live="polite"></div></div></section></main><footer class="wrap"><div class="site-footer"><p class="footer-note">© 2026 LEO KNOX<br>{d['footer']}</p><div class="footer-right"><time class="local-time" data-time>UTC+8</time><a href="#main">{d['back']}</a></div></div></footer></body></html>'''
+"""Render the three static language pages + 404 as Vite entry HTML (stdlib only).
 
- dest=ROOT/prefix/'index.html';dest.parent.mkdir(parents=True,exist_ok=True);dest.write_text(head+body)
- if lang=='en':
-  error=re.sub(r'<link rel="alternate"[^>]+>','',head).replace(f'<link rel="canonical" href="{BASE}">','<meta name="robots" content="noindex">').replace('<title>'+E(d['title'])+'</title>','<title>404 — Leo’s Office</title>')
-  error=error.replace(f'<script type="application/ld+json">{ld}</script>','')
-  error=error.replace('href="./assets/','href="/assets/').replace('src="./assets/','src="/assets/')
-  (ROOT/'404.html').write_text(error+f'<body><main class="wrap error-page"><a class="wordmark" href="/">{icon}Leo’s Office.</a><h1>404</h1><h2>{d["errorHeading"]}</h2><p>{d["errorText"]}</p><a class="back-link" href="/">{d["errorBack"]} ↗</a><p><a href="mailto:leo@leosoffice.com">leo@leosoffice.com</a></p></main></body></html>')
-(ROOT/'robots.txt').write_text('User-agent: *\nAllow: /\nSitemap: '+BASE+'sitemap.xml\n')
-(ROOT/'sitemap.xml').write_text('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+''.join('<url><loc>'+BASE+p+'</loc></url>' for p,_ in LOCALES.values())+'</urlset>\n')
-(ROOT/'_redirects').write_text('/favicon.ico /assets/favicon.svg 301\n/cn/index.html /zh-hans/ 301\n/en/index.html / 301\n/cn /zh-hans/ 301\n/cn/ /zh-hans/ 301\n/en / 301\n/en/ / 301\n/index.html / 301\n/zh-hant/index.html /zh-hant/ 301\n/zh-hans/index.html /zh-hans/ 301\n')
-(ROOT/'_headers').write_text('''/*
+The HTML carries all copy, SEO and links so the site reads fine without JS.
+src/main.js enhances it: the 3D office (React + react-three-fiber) mounts into
+#office-root and the hero becomes a scroll-driven walk into the room.
+Static hosting files (robots, sitemap, _headers, _redirects) go to public/.
+Run `npm run build` for the full site (this script, then `vite build`).
+"""
+from pathlib import Path
+import html, json, hashlib, base64, re
+
+ROOT = Path(__file__).resolve().parents[1]
+PUBLIC = ROOT / 'public'
+BASE = 'https://www.leosoffice.com/'
+TELEGRAM = 'https://t.me/leospmbot'
+LOCALES = {'en': ('', 'en_US'), 'zh-Hant': ('zh-hant/', 'zh_TW'), 'zh-Hans': ('zh-hans/', 'zh_CN')}
+# The four desk objects: key, domain, canonical URL, label icon.
+SPACES = [('dev', 'leoknox.dev', 'https://www.leoknox.dev/', '▱'),
+          ('me', 'leoknox.me', 'https://www.leoknox.me/', '▥'),
+          ('aploa', 'aploa.com', 'https://aploa.com/', '⌁'),
+          ('agent', 'agent.leoknox.us', 'https://agent.leoknox.us/', '▤')]
+BOOKMARKS = ['https://image.nimama.de/', 'https://wp.leoknox.de/', 'https://key.leoknox.de/']
+E = html.escape
+ICON = '''<svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><path d="M8 7v26h24" stroke="currentColor" stroke-width="2"/><circle cx="27" cy="14" r="5" fill="#ff9b71"/><ellipse cx="27" cy="14" rx="10" ry="3" transform="rotate(-35 27 14)" stroke="#ff9b71"/></svg>'''
+
+
+def head(d, lang, prefix, oglocale, ld):
+    alternates = ''.join(f'<link rel="alternate" hreflang="{l}" href="{BASE + p}">' for l, (p, _) in LOCALES.items()) + f'<link rel="alternate" hreflang="x-default" href="{BASE}">'
+    return (f'<!doctype html><html lang="{lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+            f'<meta name="theme-color" content="#f4f1e8"><title>{E(d["title"])}</title><meta name="description" content="{E(d["description"], quote=True)}">'
+            f'<link rel="canonical" href="{BASE + prefix}">{alternates}'
+            f'<meta property="og:type" content="website"><meta property="og:site_name" content="Leo’s Office"><meta property="og:title" content="{E(d["title"], quote=True)}">'
+            f'<meta property="og:description" content="{E(d["description"], quote=True)}"><meta property="og:url" content="{BASE + prefix}"><meta property="og:locale" content="{oglocale}">'
+            f'<meta property="og:image" content="{BASE}assets/og-{lang}.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">'
+            f'<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="{E(d["title"], quote=True)}"><meta name="twitter:description" content="{E(d["description"], quote=True)}"><meta name="twitter:image" content="{BASE}assets/og-{lang}.png">'
+            f'<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"><script type="application/ld+json">{ld}</script>'
+            f'<script type="module" src="/src/main.js"></script></head>')
+
+
+def office_data(d):
+    """Copy the 3D layer needs, passed as one JSON data attribute (no inline script)."""
+    return {'spaces': [{'key': k, 'domain': dom, 'url': url, 'icon': icon, 'label': d['tabs'][i], 'name': d['cards'][i][0], 'description': d['cards'][i][1]}
+                       for i, (k, dom, url, icon) in enumerate(SPACES)],
+            'visit': d['visit'], 'back': d['backToRoom'], 'explore': d['exploreHint'], 'reset': d['reset'], 'fallback': d['fallback']}
+
+
+def page(d, lang, prefix):
+    up = '/' + prefix
+    languages = ''.join(f'<a data-language="{l}" lang="{l}" hreflang="{l}" href="/{p}"' + (' aria-current="page"' if l == lang else '') + '>' + {'en': 'EN', 'zh-Hant': '繁', 'zh-Hans': '简'}[l] + '</a>' for l, (p, _) in LOCALES.items())
+    nav = ''.join(f'<a href="#{t}">{E(text)}</a>' for t, text in zip(['spaces', 'story', 'contact'], d['nav']))
+    cards = ''.join(f'<a class="space-card" href="{url}" data-space="{k}"><span class="space-icon" aria-hidden="true">{icon}</span><span class="space-domain">{dom}</span><strong>{E(d["cards"][i][0])}</strong><span class="space-desc">{E(d["cards"][i][1])}</span><span class="space-go">{E(d["visit"])} ↗</span></a>'
+                    for i, (k, dom, url, icon) in enumerate(SPACES))
+    bookmarks = ''.join(f'<a href="{url}">{E(label)} ↗</a>' for url, label in zip(BOOKMARKS, d['bookmarkNames']))
+    story = ''.join(f'<p data-chapter="{E(d["chapters"][i], quote=True)}">{E(text)}</p>' for i, text in enumerate(d['story']))
+    data = E(json.dumps(office_data(d), ensure_ascii=False, separators=(',', ':')), quote=True)
+    return f'''<body><a class="skip" href="#main">{d['skip']}</a><div class="wrap header-wrap"><header class="site-header"><a class="wordmark" href="{up}" aria-label="Leo’s Office">{ICON}<span>Leo’s <i>Office.</i></span></a><div class="header-right"><nav class="nav" id="nav" aria-label="{d['menu']}">{nav}</nav><div class="languages" aria-label="{d['language']}">{languages}</div><button class="menu-button" aria-expanded="false" aria-controls="nav" aria-label="{d['menu']}">☰</button></div></header></div><div class="language-notice" hidden><a id="language-suggestion" href="/"></a><button data-dismiss-language aria-label="{d['dismiss']}">×</button></div><main id="main"><section class="office" id="office" aria-labelledby="hero-title"><div class="hero office-stage"><div class="office-canvas" id="office-root" data-office="{data}" role="img" aria-label="{d['sceneDesc']}"><img class="room-fallback" src="/assets/office-fallback.svg" alt="" width="1000" height="650"></div><div class="hero-heading wrap"><p class="hello">{d['hello']}</p><h1 id="hero-title">{d['heroTitle']}</h1><p class="hero-intro">{d['heroSubtitle']}</p></div><div class="avatar-sticker"><img src="/assets/leo-avatar.jpg" alt="{d['avatarAlt']}" width="79" height="79"><small>Leo was here.</small></div><p class="scroll-hint" aria-hidden="true">{d['scrollHint']} <span>↓</span></p></div></section><section class="spaces wrap" id="spaces" aria-labelledby="spaces-title"><p class="section-label">{d['spacesLabel']}</p><h2 id="spaces-title">{d['spacesHeading']}</h2><div class="space-grid">{cards}</div><details class="bookmarks"><summary>{d['bookmarks']}</summary><div class="bookmark-links">{bookmarks}</div></details></section><div class="wrap"><section class="story" id="story" aria-labelledby="story-title"><div class="story-intro"><div><p class="section-label">{d['storyLabel']}</p><h2 id="story-title">{d['storyHeading']}</h2></div><aside class="sticky-note"><p>{d['sticky']}</p><div class="signature">— Leo</div></aside></div><div class="story-text">{story}</div></section><div class="quote-strip"><span class="little-star" aria-hidden="true">✳</span><span>{d['intro'].replace('<br>', ' ')}<br>{d['note'].replace('<br>', ' ')}</span><span class="little-star" aria-hidden="true">✳</span></div><section class="contact" id="contact" aria-labelledby="contact-title"><div><p class="section-label">{d['contactLabel']}</p><h2 id="contact-title">{d['contactHeading']}</h2><p>{d['contactNote']}</p></div><div><a class="email" href="mailto:leo@leosoffice.com">leo@leosoffice.com <span aria-hidden="true">↗</span></a><div class="contact-links"><div><a href="{TELEGRAM}">Telegram @leospmbot ↗</a> &nbsp; / &nbsp; <a href="https://www.nodeseek.com/notification#/message?mode=talk&amp;to=26676">NodeSeek ↗</a></div><button class="copy-email" data-copy data-success="{d['copySuccess']}" data-failure="{d['copyFailure']}">{d['copy']}</button></div><div class="copy-status" role="status" aria-live="polite"></div></div></section></div></main><footer class="wrap"><div class="site-footer"><p class="footer-note">© 2026 LEO KNOX<br>{d['footer']}</p><div class="footer-right"><time class="local-time" data-time>UTC+8</time><a href="#main">{d['back']}</a></div></div></footer></body></html>'''
+
+
+hashes = []
+for lang, (prefix, oglocale) in LOCALES.items():
+    d = json.loads((ROOT / 'content' / f'{lang}.json').read_text())
+    schema = {'@context': 'https://schema.org', '@type': 'ProfilePage', 'url': BASE + prefix, 'name': d['title'], 'description': d['description'], 'inLanguage': lang,
+              'mainEntity': {'@type': 'Person', 'name': 'Leo Knox', 'url': BASE, 'image': BASE + 'assets/leo-avatar.jpg', 'email': 'leo@leosoffice.com',
+                             'sameAs': [TELEGRAM, 'https://www.leoknox.dev/', 'https://www.leoknox.me/']}}
+    ld = json.dumps(schema, ensure_ascii=False, separators=(',', ':'))
+    hashes.append("'sha256-" + base64.b64encode(hashlib.sha256(ld.encode()).digest()).decode() + "'")
+    h = head(d, lang, prefix, oglocale, ld)
+    dest = ROOT / prefix / 'index.html'; dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(h + page(d, lang, prefix))
+    if lang == 'en':
+        error = re.sub(r'<link rel="alternate"[^>]+>', '', h).replace(f'<link rel="canonical" href="{BASE}">', '<meta name="robots" content="noindex">')
+        error = error.replace('<title>' + E(d['title']) + '</title>', '<title>404 — Leo’s Office</title>').replace(f'<script type="application/ld+json">{ld}</script>', '')
+        (ROOT / '404.html').write_text(error + f'<body><main class="wrap error-page"><a class="wordmark" href="/">{ICON}Leo’s Office.</a><h1>404</h1><h2>{d["errorHeading"]}</h2><p>{d["errorText"]}</p><a class="back-link" href="/">{d["errorBack"]} ↗</a><p><a href="mailto:leo@leosoffice.com">leo@leosoffice.com</a></p></main></body></html>')
+
+PUBLIC.mkdir(exist_ok=True)
+(PUBLIC / 'robots.txt').write_text(f'User-agent: *\nAllow: /\nSitemap: {BASE}sitemap.xml\n')
+(PUBLIC / 'sitemap.xml').write_text('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + ''.join(f'<url><loc>{BASE + p}</loc></url>' for p, _ in LOCALES.values()) + '</urlset>\n')
+(PUBLIC / '_redirects').write_text('/favicon.ico /assets/favicon.svg 301\n/cn/index.html /zh-hans/ 301\n/en/index.html / 301\n/cn /zh-hans/ 301\n/cn/ /zh-hans/ 301\n/en / 301\n/en/ / 301\n/index.html / 301\n/zh-hant/index.html /zh-hant/ 301\n/zh-hans/index.html /zh-hans/ 301\n')
+(PUBLIC / '_headers').write_text('''/*
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
-  Content-Security-Policy: default-src 'self'; script-src 'self' '''+' '.join(all_hashes)+'''; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'none';
+  Content-Security-Policy: default-src 'self'; script-src 'self' ''' + ' '.join(hashes) + '''; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'none';
+/static/*
+  Cache-Control: public, max-age=31536000, immutable
 /assets/*
   Cache-Control: public, max-age=86400, stale-while-revalidate=604800
 ''')
-dist=ROOT/'dist';shutil.rmtree(dist,ignore_errors=True);dist.mkdir()
-for name in ['index.html','404.html','zh-hant','zh-hans','assets','robots.txt','sitemap.xml','_headers','_redirects']:
- src=ROOT/name;dst=dist/name
- if src.is_dir():shutil.copytree(src,dst)
- else:shutil.copy2(src,dst)
-if BUNDLE:
- # Tree-shake Three.js into one minified module (~2.1 MB -> ~0.57 MB, ~0.42 MB -> ~0.15 MB gzip).
- subprocess.run(['npx','--yes','esbuild@0.28.2',str(ROOT/'assets/scene.js'),'--bundle','--minify','--format=esm','--legal-comments=eof','--log-level=warning','--outfile='+str(dist/'assets/scene.js'),'--allow-overwrite'],check=True)
- for name in ['three.core.js','three.module.js']:(dist/'assets/vendor'/name).unlink()
-print('Built 3 static language pages, English 404, SEO, hosting rules and dist/'+(' (Three.js bundled).' if BUNDLE else '.'))
+print('Rendered 3 language pages + 404 (Vite entries) and public/ hosting files.')
