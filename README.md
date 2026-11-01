@@ -67,6 +67,8 @@ node --input-type=module --check < assets/scene.js
 - `not_found_handling: "404-page"`；404 页改用根路径绝对引用，任意深度都有样式。
 - 兄弟站点链接直接指向 `https://www.leoknox.dev/`、`https://www.leoknox.me/`（物件按钮的 `data-url`）；Telegram 统一为 `@leospmbot`；JSON-LD Person 增加 `sameAs`。
 
+- 视图：相机按房间包围盒自动取景；舞台高度随视口（中/英分别计算），首屏可见物件按钮；控制条在画面下方；小屏收起装饰；画布边缘渐隐。
+
 ### Cloudflare 后台
 
 1. 用本仓库新建 Worker（名称 `leosoffice-com`，部署命令 `npx wrangler deploy`）。

@@ -156,7 +156,13 @@ function buildOffice(){
  }
  function wake(){if(raf)cancelAnimationFrame(raf);raf=0;last=0;settleFrames=0;if(allowed())raf=requestAnimationFrame(tick);controls();}
  host.addEventListener('pointermove',()=>{if(hover)wake();},{passive:true});host.addEventListener('pointerleave',wake,{passive:true});
- function resize(){cssWidth=host.clientWidth;cssHeight=host.clientHeight;if(!cssWidth||!cssHeight)return;renderer.setSize(cssWidth,cssHeight,false);const aspect=cssWidth/cssHeight,view=small.matches?Math.max(6.25,7.8/aspect):6.2;camera.left=-view*aspect/2;camera.right=view*aspect/2;camera.top=view/2;camera.bottom=-view/2;camera.updateProjectionMatrix();draw();wake();}
+ // Fit the frustum to the room's projected bounds (over the usual drag range) so it is never clipped at any aspect.
+ const fit=(()=>{const box=new THREE.Box3().setFromObject(world),c=[];for(const x of[box.min.x,box.max.x])for(const y of[box.min.y,box.max.y])for(const z of[box.min.z,box.max.z])c.push(new THREE.Vector3(x,y,z));
+  const probe=new THREE.OrthographicCamera(),o=new THREE.Vector3(0,1.45,0);let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;
+  for(const yw of[.64,.78,.92])for(const pt of[.57,.61,.65]){probe.position.set(Math.sin(yw)*Math.cos(pt)*10,o.y+Math.sin(pt)*10,Math.cos(yw)*Math.cos(pt)*10);probe.lookAt(o);probe.updateMatrixWorld();
+   for(const v of c){const q=v.clone().applyMatrix4(probe.matrixWorldInverse);x0=Math.min(x0,q.x);x1=Math.max(x1,q.x);y0=Math.min(y0,q.y);y1=Math.max(y1,q.y);}}
+  return {cx:(x0+x1)/2,cy:(y0+y1)/2,w:x1-x0,h:y1-y0};})();
+ function resize(){cssWidth=host.clientWidth;cssHeight=host.clientHeight;if(!cssWidth||!cssHeight)return;renderer.setSize(cssWidth,cssHeight,false);const aspect=cssWidth/cssHeight,pad=small.matches?1.02:1.03;let w=fit.w*pad,h=fit.h*pad;if(w/h<aspect)w=h*aspect;else h=w/aspect;camera.left=fit.cx-w/2;camera.right=fit.cx+w/2;camera.top=fit.cy+h/2;camera.bottom=fit.cy-h/2;camera.updateProjectionMatrix();draw();wake();}
  const ro=new ResizeObserver(resize);ro.observe(host);
  const io=new IntersectionObserver(entries=>{onScreen=entries[0].isIntersecting;wake();},{threshold:.03});io.observe(host);
  pause.addEventListener('click',()=>{paused=!paused;if(paused)snap();wake();});

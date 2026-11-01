@@ -39,3 +39,10 @@ node --input-type=module --check < assets/scene.js
 - `wrangler deploy --dry-run` 与本地 wrangler 模拟：dist 24 个文件；/cn/、/cn/index.html → /zh-hans/，/en/index.html → /；深层未知路径、README、scripts、未打包 vendor 均返回 404；favicon.ico 301；CSP 与 X-Frame-Options 响应头存在。
 - 浏览器（SwiftShader WebGL）在严格 CSP 下加载打包版：简中桌面 1440、英文手机 390 均渲染 3D 房间，无控制台错误、无横向溢出；点击「书本」后详情与房间链接均为 https://www.leoknox.me/。首页传输约 0.6 MB（原 2.25 MB）。
 - 外部书签可用性（2026-11-01 从云端检查）：image.nimama.de 返回 525，wp.leoknox.de 与 key.leoknox.de 连接失败；未修改链接。
+
+## 2026-11-01 首屏视图优化
+
+- 相机改为按房间包围盒自动取景（采样默认视角附近的偏航/俯仰），任意宽高比下房间完整，不再被画布切掉墙顶与地板角；拖到最大角度（yaw 0.16 / pitch 0.9）仍完整。
+- 舞台高度随视口：中文 `100svh - 300px`、英文 `100svh - 405px`（矮屏另有收紧）。1920×1080、1440×900、1280×720、1024×768、768×1024、390×844、360×740 下物件按钮都在首屏内（英/繁/简实测）。
+- 控制按钮、提示、选中入口移到画面下方的独立操作条，不再压在 3D 地板上；≤1000px 隐藏手写便签和英文标签，头像贴纸缩小放到角落；手机隐藏「拖动环顾」提示。
+- 画布四边 CSS 遮罩渐隐，镜头拉近时不再是硬直线裁切。

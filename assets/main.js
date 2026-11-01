@@ -36,4 +36,4 @@ copy?.addEventListener('click',async()=>{try{await navigator.clipboard.writeText
 const time=document.querySelector('[data-time]');
 function updateTime(){if(time)time.textContent=new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'Asia/Taipei'}).format(new Date())+' UTC+8';}
 updateTime();setInterval(()=>{if(!document.hidden)updateTime();},30000);
-if(document.querySelector('.room'))import('./scene.js?v=d8e1b9e94de7').catch(()=>{const room=document.querySelector('.room');room.dataset.unavailable='true';document.querySelector('.room-caption').textContent=room.dataset.fallback;document.querySelector('.room-controls').hidden=true;});
+if(document.querySelector('.room'))import('./scene.js?v=858a728e408b').catch(()=>{const room=document.querySelector('.room');room.dataset.unavailable='true';document.querySelector('.room-caption').textContent=room.dataset.fallback;document.querySelector('.room-controls').hidden=true;});
