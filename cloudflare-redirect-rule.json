@@ -1,0 +1,12 @@
+{
+  "description": "Reference only: apex and HTTP to canonical HTTPS www",
+  "expression": "(http.host eq \"leosoffice.com\") or (http.host eq \"www.leosoffice.com\" and not ssl)",
+  "action": "redirect",
+  "action_parameters": {
+    "from_value": {
+      "status_code": 301,
+      "target_url": { "expression": "concat(\"https://www.leosoffice.com\", http.request.uri.path)" },
+      "preserve_query_string": true
+    }
+  }
+}

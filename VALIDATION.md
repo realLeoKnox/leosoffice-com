@@ -1,0 +1,34 @@
+# 本地验证记录 — 2026-10-30
+
+目标：`leosoffice.com` 的新版个人总站，输出 `outputs/leosoffice-com`。线上旧站未修改，未上传 Sites / GitHub，未更改域名、DNS 或托管。
+
+## 已完成
+
+- 从 npm 官方注册表读取并保存 Three.js 0.186.1 / r186，包含两个官方运行模块与 MIT 许可证。页面本地加载，不请求 CDN。
+- 立体办公室在浏览器实际渲染；DOM 记录 WebGL 初始化成功，使用 OrthographicCamera。最终版本控制台未见 error。
+- 实际使用鼠标拖动环顾：镜头 yaw / pitch 从初始 0.780 / 0.610 变化至 0.175 / 0.682；全景按钮返回初始视角。
+- 点击 3D 物件可选择对应入口；按钮选中书本时显示 leoknox.me，选中台灯时显示 aploa.com，镜头平滑靠近并出现直达入口。
+- 暂停后渲染帧数在两次独立读取中保持 7，不继续绘制。静态视角也按需停止更新。
+- 英文、繁中、简中都实际打开检查。移动菜单展开、选择章节后关闭；英文 #story 切到繁中后仍保留 #story。
+- 繁中邮箱复制实际返回「信箱已複製，郵件裡見。」；邮件地址为 leo@leosoffice.com。
+- 1280×960 桌面、390×844 浏览器视口检查无横向溢出，均保存截图。手机标题按两行排布，完整房间和选择按钮可见。查看了桌面整页截图，检查往事、便笺、指定文案和联系区域。
+- 三语言静态 SEO 与资源检查通过：唯一 H1、description、各自 canonical、互相对应的 hreflang / x-default、JSON-LD / CSP hash、45 个本地及 SEO 引用、3 个 sitemap 规范网址、404 noindex、完整 dist。
+- 原头像 SHA-256 与原交付文件一致；买 VPS 的原话与指定两句文案保留。未加入具体项目仓库链接。
+- 两个业务 JS 模块通过 Node 语法检查。
+
+## 验证边界
+
+这是浏览器模拟尺寸，未测试手机真机、所有 GPU 或浏览器，也未实际模拟 WebGL 上下文丢失、禁用 JavaScript 或系统减少动态效果。源码包含对应的 SVG / 普通链接回退和低动态分支，但不把代码检查写成设备实测。
+
+触屏横向环顾和纵向滚动的处理已实现；本次没有真实触屏输入设备验收。外部站点、Telegram、NodeSeek 的可用性没有逐个测试。
+
+Python 本地服务器不应用 Cloudflare `_headers` / `_redirects`，本次检查的是配置文件及 CSP hash，未验证生产 HTTP 安全头、apex / www 跳转、真实 404 状态、缓存压缩、线上性能或搜索引擎收录。
+
+## 再次检查
+
+```sh
+python3 scripts/build.py
+python3 tests/check_site.py
+node --input-type=module --check < assets/main.js
+node --input-type=module --check < assets/scene.js
+```

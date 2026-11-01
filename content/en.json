@@ -1,0 +1,91 @@
+{
+  "title": "Leo’s Office — A personal corner of the internet",
+  "description": "Leo Knox’s personal home on the internet. Find my projects, personal space, Aploa, and the story of how a first website became a lasting curiosity.",
+  "skip": "Skip to content",
+  "nav": [
+    "My spaces",
+    "A little history",
+    "Say hello"
+  ],
+  "language": "Choose a language",
+  "menu": "Open navigation",
+  "hello": "Hi, I’m Leo.",
+  "intro": "It starts with curiosity.<br><em>Then, a world of possibilities.</em>",
+  "note": "Stay independent. Make things with care. Leave a little room for what comes next.",
+  "sceneLabel": "A SMALL OFFICE / AN OPEN DOOR",
+  "sceneDesc": "An interactive three-dimensional office. The computer represents development, the books my personal space, the lamp Aploa, and the server monitoring. Use the buttons below for the same controls.",
+  "pause": "Pause",
+  "resume": "Play",
+  "reduced": "Still",
+  "fallback": "The room is quiet. All the doors below are still open.",
+  "cards": [
+    [
+      "Development",
+      "Projects, technical decisions, and experiments that turn an idea into something you can use."
+    ],
+    [
+      "The person behind it",
+      "My personality, habits, interests, and the things that make me, me."
+    ],
+    [
+      "Aploa",
+      "An independent brand taking shape, with room to grow in its own direction."
+    ],
+    [
+      "Server monitor",
+      "A window into server status. The practical side of keeping things running."
+    ]
+  ],
+  "bookmarks": "A few older bookmarks",
+  "bookmarkNames": [
+    "Image hosting",
+    "The old blog",
+    "Vaultwarden"
+  ],
+  "storyLabel": "02 / A LITTLE HISTORY",
+  "storyHeading": "It began with<br><em>a website of my own.</em>",
+  "avatarAlt": "Leo Knox’s personal avatar",
+  "avatarNote": "Still learning. Still curious.",
+  "story": [
+    "I’ve wanted a little place on the internet since primary school.",
+    "Back then, just having a website of my own seemed wonderful. In middle school, a QQ group introduced me to virtual hosting and “order-boosting” sites. That opened the door.",
+    "My first VPS came from a small one-person provider I found in another QQ group. They even charged me 30 to install a server control panel. I still laugh about that. 😂",
+    "A lot has changed since then. The curiosity that got me started hasn’t.",
+    "As for what I know now? Somehow it feels like quite a lot, and also like nothing at all. 😭"
+  ],
+  "contactLabel": "03 / SAY HELLO",
+  "contactHeading": "Pull up a chair.<br>Let’s talk.",
+  "contactNote": "For projects, a shared interest, or simply a hello.",
+  "copy": "Copy email",
+  "copySuccess": "Email copied. See you in the inbox.",
+  "copyFailure": "Please select and copy leo@leosoffice.com.",
+  "back": "Back to top ↑",
+  "footer": "Stay curious. Keep a little room for the unexpected.",
+  "dismiss": "Dismiss language suggestion",
+  "errorHeading": "A little off orbit.",
+  "errorText": "This page isn’t here. Let’s head back to the office.",
+  "errorBack": "Back to the office",
+  "heroTitle": "Come in.<br><em>Make yourself at home.</em>",
+  "heroSubtitle": "A little room for curiosity, ideas, and the things I care about.",
+  "roomNote": "Pick something up.<br>There’s a story behind it.",
+  "roomHint": "Drag to look around · Click an object to explore",
+  "tabs": [
+    "Computer",
+    "Books",
+    "Lamp",
+    "Server"
+  ],
+  "visit": "Take a look",
+  "reset": "Full room",
+  "turnLeft": "Look from the left",
+  "turnRight": "Look from the right",
+  "chapters": [
+    "01 / PRIMARY SCHOOL",
+    "02 / MIDDLE SCHOOL",
+    "03 / THE FIRST VPS",
+    "04 / STILL CURIOUS",
+    "A NOTE TO SELF"
+  ],
+  "sticky": "Somehow I know quite a lot.<br>And somehow, nothing at all. 😭",
+  "roomSection": "Explore the office"
+}
