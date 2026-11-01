@@ -1,7 +1,8 @@
 /*
   X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-sve/mfIlFCuCLgJTEFTNLsEL7vBoTnId5QwTPKlduXo=' 'sha256-kDOwKYo0KQHXeKUhsCPPQPgjH2DsQmhvSgJlfUB1Y5k=' 'sha256-p1hbC9oP2IMfqucLoWWoU+g4KPWWixyGoOEEL37v1X8='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'none';
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-PX7fC9xeM3baW/z/+j1/kZCDjRsLfVFeuyvXiQBudcg=' 'sha256-OIazw+JvUPSD8gxrf9HLlEFwy+/+0AIlkraZXc1+KAU=' 'sha256-T+wuDCwJxnKX+BNRFOsWLu/ar1MPZqHp4y7KWsNkOj4='; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'none';
 /assets/*
-  Cache-Control: public, max-age=3600
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800

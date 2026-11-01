@@ -32,3 +32,10 @@ python3 tests/check_site.py
 node --input-type=module --check < assets/main.js
 node --input-type=module --check < assets/scene.js
 ```
+
+## 2026-11-01 迁入仓库与上线优化
+
+- `python3 tests/check_site.py` 通过（新增：www 兄弟站链接、Telegram @leospmbot、404 绝对路径、CSP 无 unsafe-inline、旧 /cn/index.html 与 /en/index.html 跳转、dist 不含私有文件）。
+- `wrangler deploy --dry-run` 与本地 wrangler 模拟：dist 24 个文件；/cn/、/cn/index.html → /zh-hans/，/en/index.html → /；深层未知路径、README、scripts、未打包 vendor 均返回 404；favicon.ico 301；CSP 与 X-Frame-Options 响应头存在。
+- 浏览器（SwiftShader WebGL）在严格 CSP 下加载打包版：简中桌面 1440、英文手机 390 均渲染 3D 房间，无控制台错误、无横向溢出；点击「书本」后详情与房间链接均为 https://www.leoknox.me/。首页传输约 0.6 MB（原 2.25 MB）。
+- 外部书签可用性（2026-11-01 从云端检查）：image.nimama.de 返回 525，wp.leoknox.de 与 key.leoknox.de 连接失败；未修改链接。

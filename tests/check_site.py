@@ -22,7 +22,9 @@ for lang,prefix in locales.items():
  assert alternates=={**{l:BASE+p for l,p in locales.items()},'x-default':BASE}
  assert len([1 for tag,a in page.nodes if 'data-office-key' in a])==4
  assert 'mailto:leo@leosoffice.com' in source and 'leo@leoknox.de' not in source
- assert all('https://'+domain+'/' in source for domain in ['leoknox.dev','leoknox.me','aploa.com','agent.leoknox.us'])
+ assert all(url in source for url in ['https://www.leoknox.dev/','https://www.leoknox.me/','https://aploa.com/','https://agent.leoknox.us/'])
+ assert 'href="https://leoknox.dev/"' not in source and 'href="https://leoknox.me/"' not in source
+ assert 'https://t.me/leospmbot' in source and 'realLeoKnox' not in source
  assert 'https://github.com/' not in source
  data=re.search(r'<script type="application/ld\+json">(.*?)</script>',source)[1]
  schema=json.loads(data);assert schema['inLanguage']==lang and schema['url']==BASE+prefix
@@ -43,6 +45,10 @@ for lang,prefix in locales.items():
  print('PASS',lang,'static content, locale links, metadata, controls, assets and CSP')
 sitemap=ET.parse(ROOT/'sitemap.xml');urls={el.text for el in sitemap.findall('.//{*}loc')};assert urls=={BASE+p for p in locales.values()}
 source=(ROOT/'404.html').read_text();assert 'content="noindex"' in source and 'leo@leosoffice.com' in source
+assert not re.search(r'(href|src)="\./',source),'404 must use root-absolute refs'
+assert "'unsafe-inline'" not in headers
+redirects=(ROOT/'_redirects').read_text();assert '/cn/index.html /zh-hans/ 301' in redirects and '/en/index.html / 301' in redirects
+for leaked in ['README.md','VALIDATION.md','content','scripts','tests','preview.command','wrangler.jsonc']:assert not (ROOT/'dist'/leaked).exists(),leaked
 assert (ROOT/'assets/vendor/LICENSE').is_file()
 assert json.loads((ROOT/'assets/vendor/version.json').read_text())['version']=='0.186.1'
 assert hashlib.sha256((ROOT/'assets/leo-avatar.jpg').read_bytes()).hexdigest()=='556fe9ed8c86cc3bb46ad8954ec18937a993bfbdb2ab2880ac45d36db2a62c54'

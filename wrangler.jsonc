@@ -1,0 +1,16 @@
+// Cloudflare Workers static-assets deployment for www.leosoffice.com.
+// Workers Builds runs `npx wrangler deploy`: build.command renders the pages,
+// bundles Three.js with esbuild, then ONLY ./dist is published.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "leosoffice-com",
+  "compatibility_date": "2026-10-01",
+  "build": {
+    "command": "python3 scripts/build.py --bundle"
+  },
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page",
+    "html_handling": "auto-trailing-slash"
+  }
+}

@@ -1,6 +1,6 @@
 # Leo’s Office — 一个可以探索的小办公室
 
-leosoffice.com 的本地新版。浅纸色背景、低多边形房间、木桌、蓝椅和个人头像贴纸；通过 Three.js 的正交摄像机探索内容。没有替换线上网站，没有上传 Sites 或 GitHub，没有修改 DNS。
+leosoffice.com 新版。浅纸色背景、低多边形房间、木桌、蓝椅和个人头像贴纸；通过 Three.js 的正交摄像机探索内容。仓库 `realLeoKnox/leosoffice-com`，Cloudflare Workers 静态资源（Worker `leosoffice-com`）部署，见「部署（2026-11-01）」。
 
 ## 本地运行
 
@@ -17,7 +17,7 @@ python3 -m http.server 5682 --bind 127.0.0.1 --directory dist
 
 ## 内容与交互
 
-- 电脑 → leoknox.dev，书本 → leoknox.me，台灯 → aploa.com，主机 → agent.leoknox.us。
+- 电脑 → www.leoknox.dev，书本 → www.leoknox.me，台灯 → aploa.com，主机 → agent.leoknox.us。
 - 鼠标悬停抬起物件，点击后镜头平滑靠近；显示对应名称、介绍和入口链接。点击外链前不会自动离开页面。
 - 鼠标拖动改变有限角度的视角。左右视角、回到全景和暂停按钮也可用键盘操作。触屏纵向保持页面滚动，横向拖动可环顾，也可通过物件点击或按钮探索。
 - 房间静止后停止渲染；不使用持续的环境动画。画面离屏、标签隐藏、手动暂停时停止更新。减少动态效果偏好下，镜头直接到位。
@@ -57,3 +57,18 @@ node --input-type=module --check < assets/scene.js
 ```
 
 生成器会重新写入三语言页面、JSON-LD / CSP hash 与 `dist/`。未来静态托管只上传 **dist/** 内容；源码字典、测试、文档和 preview.command 不必公开。真实上线后另行检查托管安全头、域名跳转、HTTPS、真机表现和搜索引擎收录。
+
+## 部署（2026-11-01）
+
+- `wrangler.jsonc`（Worker `leosoffice-com`）：`wrangler deploy` 先运行 `python3 scripts/build.py --bundle`，只发布 `dist/`。
+- `--bundle`：用 esbuild 0.28.2（`npx`）把 `scene.js` 与 Three.js 打包压缩为一个模块，dist 中删除未打包的 vendor 文件（保留 LICENSE 与 version.json）。首页加载约 2.25 MB → 0.6 MB；gzip 后 Three 部分约 423 KB → 149 KB。不带 `--bundle` 时仍是纯 Python 标准库构建，适合本地预览。
+- CSP 去掉 `style-src 'unsafe-inline'`（页面无内联样式，Three.js 通过 CSSOM 改样式，不受影响；已在严格 CSP 下浏览器实测），增加 `X-Frame-Options: DENY`；`/assets/*` 缓存 1 天 + stale-while-revalidate 7 天。
+- `_redirects`：旧站 `/cn/index.html` → `/zh-hans/`、`/en/index.html` → `/`（旧首页 JS 跳转的目标，旧书签与外链不会 404）；`/favicon.ico` → svg。
+- `not_found_handling: "404-page"`；404 页改用根路径绝对引用，任意深度都有样式。
+- 兄弟站点链接直接指向 `https://www.leoknox.dev/`、`https://www.leoknox.me/`（物件按钮的 `data-url`）；Telegram 统一为 `@leospmbot`；JSON-LD Person 增加 `sameAs`。
+
+### Cloudflare 后台
+
+1. 用本仓库新建 Worker（名称 `leosoffice-com`，部署命令 `npx wrangler deploy`）。
+2. 把自定义域名 `www.leosoffice.com` 从旧项目移到新 Worker。
+3. leosoffice.com 当前裸域返回 502：按 `cloudflare-redirect-rule.json` 建 301（根域名 → `https://www.leosoffice.com` 同路径），并确认 Always Use HTTPS 已开。
