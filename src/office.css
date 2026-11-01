@@ -25,13 +25,13 @@ html.office-3d .scroll-hint{display:flex;align-items:center;gap:10px;position:ab
 
 /* Labels pinned to objects (positioned every frame via transform). */
 .office-labels{position:absolute;inset:0;z-index:3;pointer-events:none}
-.office-label{position:absolute;left:0;top:0;padding:0;border:0;background:none;font:inherit;color:inherit;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .35s;will-change:transform}
+.office-label-pin{position:absolute;left:0;top:0;width:0;height:0;will-change:transform}
 .office-labels[data-visible="true"] .office-label{opacity:1;pointer-events:auto}
-.office-label-inner{position:relative;display:inline-flex;align-items:center;gap:7px;transform:translate(-50%,calc(-100% - 12px));background:#fbfaf4f2;border:1px solid #d3d9c9;border-radius:999px;padding:7px 14px 7px 11px;font-size:12px;color:var(--ink);box-shadow:0 6px 18px #3643401a;white-space:nowrap;transition:border-color .2s,color .2s,background .2s}
-.office-label-inner:after{content:"";position:absolute;left:50%;bottom:-6px;width:9px;height:9px;background:inherit;border-right:1px solid #d3d9c9;border-bottom:1px solid #d3d9c9;transform:translateX(-50%) rotate(45deg)}
-.office-label-inner small{font:10px Consolas,monospace;color:var(--muted)}
-.office-label:hover .office-label-inner,.office-label[data-hover] .office-label-inner,.office-label:focus-visible .office-label-inner{border-color:var(--orange);color:var(--orange);background:#fffdf7}
-.office-label:focus-visible{outline:none}
+.office-label{position:absolute;left:0;bottom:12px;display:inline-flex;align-items:center;gap:7px;transform:translateX(-50%);opacity:0;pointer-events:none;cursor:pointer;font:inherit;background:#fbfaf4f2;border:1px solid #d3d9c9;border-radius:999px;padding:7px 14px 7px 11px;font-size:12px;color:var(--ink);box-shadow:0 6px 18px #3643401a;white-space:nowrap;transition:opacity .35s,border-color .2s,color .2s,background .2s}
+.office-label:after{content:"";position:absolute;left:50%;bottom:-6px;width:9px;height:9px;background:inherit;border-right:1px solid #d3d9c9;border-bottom:1px solid #d3d9c9;transform:translateX(-50%) rotate(45deg)}
+.office-label small{font:10px Consolas,monospace;color:var(--muted)}
+.office-label:hover,.office-label[data-hover],.office-label:focus-visible{border-color:var(--orange);color:var(--orange);background:#fffdf7;outline:none}
+
 .office-explore{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);margin:0;z-index:3;font-size:11px;color:var(--muted);background:#f4f1e8d9;padding:6px 14px;border-radius:999px;white-space:nowrap;opacity:0;transition:opacity .4s;pointer-events:none}
 .office-explore[data-visible="true"]{opacity:1}
 
@@ -72,8 +72,8 @@ html:not([lang="en"]) .spaces h2{font-family:var(--sans);font-size:30px;line-hei
  html.office-3d .avatar-sticker img{width:46px;height:46px}
  html.office-3d .avatar-sticker small{font-size:8px;margin-top:3px}
  html.office-3d .scroll-hint{bottom:18px}
- .office-label-inner{font-size:11px;padding:6px 11px 6px 9px;gap:5px}
- .office-label-inner small{display:none}
+ .office-label{font-size:11px;padding:6px 11px 6px 9px;gap:5px}
+ .office-label small{display:none}
  .office-explore{bottom:16px;font-size:10px}
  .office-card{left:12px;right:12px;width:auto;top:auto;bottom:12px;transform:translateY(24px);border-radius:18px;padding:22px 22px 18px}
  .office-card[data-open="true"]{transform:none}
@@ -87,3 +87,13 @@ html:not([lang="en"]) .spaces h2{font-family:var(--sans);font-size:30px;line-hei
 }
 @media(max-width:560px){.space-grid{grid-template-columns:1fr}.space-card{min-height:0}}
 @media(prefers-reduced-motion:reduce){.scroll-hint span{animation:none}.office-card,.office-label,.office-explore{transition:none}}
+/* 2026-11-01 v2.1: avatar lives in the room (3D polaroid); card browsing; soft canvas edges */
+html.office-3d .avatar-sticker{display:none}
+html.office-3d .office-canvas canvas{-webkit-mask-image:linear-gradient(#0000,#000 3%,#000 97%,#0000),linear-gradient(90deg,#0000,#000 2%,#000 98%,#0000);-webkit-mask-composite:source-in;mask-image:linear-gradient(#0000,#000 3%,#000 97%,#0000),linear-gradient(90deg,#0000,#000 2%,#000 98%,#0000);mask-composite:intersect}
+.office-card-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.office-card-nav{display:flex;align-items:center;gap:6px;font:11px Consolas,monospace;color:var(--muted)}
+.office-card-nav button{width:28px;height:28px;border-radius:50%;border:1px solid #d3d9c9;background:#f6f4ec;color:var(--ink);font-size:15px;line-height:1;cursor:pointer;transition:border-color .2s,color .2s}
+.office-card-nav button:hover:not(:disabled){border-color:var(--orange);color:var(--orange)}
+.office-card-nav button:disabled{opacity:.35;cursor:default}
+.office-card-hint{margin:16px 0 0!important;font-size:10px!important;color:#9aa296!important}
+@media(hover:none),(pointer:coarse){.office-card-hint{display:none}}

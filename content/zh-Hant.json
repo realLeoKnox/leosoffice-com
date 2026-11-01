@@ -92,5 +92,8 @@
   "exploreHint": "點標籤或物件看看 · 拖動環顧",
   "backToRoom": "回到房間",
   "spacesHeading": "桌上的每樣東西，都有一個去處。",
-  "spacesLabel": "01 / 我的空間"
+  "spacesLabel": "01 / 我的空間",
+  "prev": "上一個",
+  "next": "下一個",
+  "wheelHint": "滾輪或 ← → 切換 · Esc 回到房間"
 }

@@ -92,5 +92,8 @@
   "exploreHint": "Tap a label or an object · Drag to look around",
   "backToRoom": "Back to the room",
   "spacesHeading": "Every object on the desk leads somewhere.",
-  "spacesLabel": "01 / MY SPACES"
+  "spacesLabel": "01 / MY SPACES",
+  "prev": "Previous",
+  "next": "Next",
+  "wheelHint": "Scroll or use ← → to browse · Esc to go back"
 }

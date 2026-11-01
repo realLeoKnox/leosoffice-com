@@ -42,7 +42,8 @@ def office_data(d):
     """Copy the 3D layer needs, passed as one JSON data attribute (no inline script)."""
     return {'spaces': [{'key': k, 'domain': dom, 'url': url, 'icon': icon, 'label': d['tabs'][i], 'name': d['cards'][i][0], 'description': d['cards'][i][1]}
                        for i, (k, dom, url, icon) in enumerate(SPACES)],
-            'visit': d['visit'], 'back': d['backToRoom'], 'explore': d['exploreHint'], 'reset': d['reset'], 'fallback': d['fallback']}
+            'visit': d['visit'], 'back': d['backToRoom'], 'explore': d['exploreHint'], 'reset': d['reset'], 'fallback': d['fallback'],
+            'prev': d['prev'], 'next': d['next'], 'wheelHint': d['wheelHint']}
 
 
 def page(d, lang, prefix):

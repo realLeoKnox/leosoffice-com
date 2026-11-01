@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 // The low-poly office, modelled from primitives and local CanvasTextures (no external assets).
 // Returns plain three.js objects; React Three Fiber mounts them with <primitive>.
-export function buildRoom(){
+export function buildRoom({ avatarUrl = '/assets/leo-avatar.jpg', onTexture } = {}){
  const world=new THREE.Group();const lights=new THREE.Group();
  lights.add(new THREE.HemisphereLight(0xfffcf0,0xa8b9b2,1.75));
  const sun=new THREE.DirectionalLight(0xfff0cf,2.8);sun.position.set(-3,7,5);sun.castShadow=true;
@@ -43,8 +43,21 @@ export function buildRoom(){
  const clock=cyl(.28,.28,.07,materials.cream,1.75,3,-2.025);clock.rotation.x=Math.PI/2;
  box(.018,.15,.03,materials.dark,1.75,3.055,-1.97);const hand=box(.14,.018,.03,materials.dark,1.805,3,-1.965);hand.rotation.z=.35;
  // Pinboard on the side wall.
- const board=rounded(1.25,.86,.05,.04,materials.wood,-2.68,2.18,.3);board.rotation.y=Math.PI/2;
- for(let i=0;i<3;i++){const note=box(.025,.26,.27,[materials.paper,materials.blue,materials.pink][i],-2.635,2.2+(i===1?.17:-.1),.02+i*.29);note.rotation.x=(i-1)*.15;sphere(.025,materials.clay,-2.61,note.position.y+.08,note.position.z);}
+ const board=rounded(1.5,1.1,.05,.04,materials.wood,-2.68,2.2,.28);board.rotation.y=Math.PI/2;
+ for(let i=0;i<2;i++){const note=box(.025,.26,.27,[materials.paper,materials.blue][i],-2.635,2.22+(i===1?.2:-.12),-.22+i*.3);note.rotation.x=(i-1)*.15;sphere(.025,materials.clay,-2.61,note.position.y+.08,note.position.z);}
+ // Leo's avatar as a polaroid pinned to the board: "Leo was here."
+ const polaroidCanvas=document.createElement('canvas');polaroidCanvas.width=320;polaroidCanvas.height=400;const pc=polaroidCanvas.getContext('2d');
+ const drawPolaroid=(img)=>{pc.fillStyle='#fbf9f1';pc.fillRect(0,0,320,400);pc.fillStyle='#ffffff';pc.fillRect(22,22,276,276);
+  if(img){const s=Math.min(img.naturalWidth,img.naturalHeight);pc.drawImage(img,(img.naturalWidth-s)/2,(img.naturalHeight-s)/2,s,s,22,22,276,276);}
+  pc.fillStyle='#66765f';pc.font='italic 34px Georgia, "Times New Roman", serif';pc.textAlign='center';pc.fillText('Leo was here.',160,354);};
+ drawPolaroid(null);
+ const polaroidTexture=new THREE.CanvasTexture(polaroidCanvas);polaroidTexture.colorSpace=THREE.SRGBColorSpace;polaroidTexture.anisotropy=4;
+ const polaroid=new THREE.Group();polaroid.position.set(-2.622,2.2,.66);polaroid.rotation.y=Math.PI/2;world.add(polaroid);
+ const photo=mesh(new THREE.PlaneGeometry(.5,.625),new THREE.MeshStandardMaterial({map:polaroidTexture,roughness:.92,metalness:0}),0,0,0,polaroid);photo.rotation.z=-.07;photo.castShadow=false;
+ const tape=box(.19,.065,.006,new THREE.MeshStandardMaterial({color:'#c9d1b8',roughness:.9,transparent:true,opacity:.85}),-.01,.305,.004,polaroid);tape.rotation.z=-.12;tape.castShadow=false;
+ const avatar=new Image();avatar.decoding='async';
+ avatar.onload=()=>{drawPolaroid(avatar);polaroidTexture.needsUpdate=true;onTexture?.();};
+ avatar.src=avatarUrl;
  // Rug and a solid wooden desk.
  const rug=rounded(3.95,2.6,.025,.3,materials.rug,.15,.005,.55);rug.rotation.x=-Math.PI/2;
  for(let i=0;i<7;i++)box(.015,.012,2.25,materials.paper,-1.4+i*.5,.025,.55);
@@ -103,6 +116,6 @@ export function buildRoom(){
  for(const [key,obj] of Object.entries(interactives)){obj.group.traverse(child=>{if(child.isMesh){child.userData.officeKey=key;pickables.push(child);}});}
  const focusTargets={dev:new THREE.Vector3(-.1,1.7,-.4),me:new THREE.Vector3(-.9,1.5,0),aploa:new THREE.Vector3(.8,1.75,-.5),agent:new THREE.Vector3(.8,.7,.9)};
  // Label anchors sit just above each object, in world space.
- const anchors={dev:new THREE.Vector3(-.1,2.5,-.6),me:new THREE.Vector3(-1.13,2.05,-.02),aploa:new THREE.Vector3(.98,2.55,-.62),agent:new THREE.Vector3(1.13,.95,1.2)};
+ const anchors={dev:new THREE.Vector3(-.1,2.66,-.6),me:new THREE.Vector3(-1.13,1.9,-.02),aploa:new THREE.Vector3(.98,2.5,-.62),agent:new THREE.Vector3(1.13,.95,1.2)};
  return {world,lights,interactives,pickables,focusTargets,anchors};
 }
