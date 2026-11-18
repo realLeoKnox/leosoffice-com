@@ -21,6 +21,13 @@ SPACES = [('dev', 'leoknox.dev', 'https://www.leoknox.dev/', '▱'),
           ('aploa', 'aploa.com', 'https://aploa.com/', '⌁'),
           ('agent', 'agent.leoknox.us', 'https://agent.leoknox.us/', '▤')]
 BOOKMARKS = ['https://image.nimama.de/', 'https://wp.leoknox.de/', 'https://key.leoknox.de/']
+GITHUB = 'https://github.com/realLeoKnox'
+# Profiles that are the same person as this site (schema.org Person.sameAs).
+# Canonical hosts were checked: leoknox.dev / leoknox.me serve on www. only (apex 301s there),
+# while aploa.com is canonical without www (www.aploa.com 200s but canonicals to the bare host).
+SAME_AS = [TELEGRAM, 'https://www.leoknox.dev/', 'https://www.leoknox.me/', 'https://aploa.com/', GITHUB]
+# Bump when the visible content of the three pages changes (sitemap <lastmod>).
+SITEMAP_LASTMOD = '2026-11-18'
 E = html.escape
 ICON = '''<svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><path d="M8 7v26h24" stroke="currentColor" stroke-width="2"/><circle cx="27" cy="14" r="5" fill="#ff9b71"/><ellipse cx="27" cy="14" rx="10" ry="3" transform="rotate(-35 27 14)" stroke="#ff9b71"/></svg>'''
 
@@ -63,7 +70,7 @@ for lang, (prefix, oglocale) in LOCALES.items():
     d = json.loads((ROOT / 'content' / f'{lang}.json').read_text())
     schema = {'@context': 'https://schema.org', '@type': 'ProfilePage', 'url': BASE + prefix, 'name': d['title'], 'description': d['description'], 'inLanguage': lang,
               'mainEntity': {'@type': 'Person', 'name': 'Leo Knox', 'url': BASE, 'image': BASE + 'assets/leo-avatar.jpg', 'email': 'leo@leosoffice.com',
-                             'sameAs': [TELEGRAM, 'https://www.leoknox.dev/', 'https://www.leoknox.me/']}}
+                             'sameAs': SAME_AS}}
     ld = json.dumps(schema, ensure_ascii=False, separators=(',', ':'))
     hashes.append("'sha256-" + base64.b64encode(hashlib.sha256(ld.encode()).digest()).decode() + "'")
     h = head(d, lang, prefix, oglocale, ld)
@@ -75,8 +82,10 @@ for lang, (prefix, oglocale) in LOCALES.items():
         (ROOT / '404.html').write_text(error + f'<body><main class="wrap error-page"><a class="wordmark" href="/">{ICON}Leo’s Office.</a><h1>404</h1><h2>{d["errorHeading"]}</h2><p>{d["errorText"]}</p><a class="back-link" href="/">{d["errorBack"]} ↗</a><p><a href="mailto:leo@leosoffice.com">leo@leosoffice.com</a></p></main></body></html>')
 
 PUBLIC.mkdir(exist_ok=True)
-(PUBLIC / 'robots.txt').write_text(f'User-agent: *\nAllow: /\nSitemap: {BASE}sitemap.xml\n')
-(PUBLIC / 'sitemap.xml').write_text('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + ''.join(f'<url><loc>{BASE + p}</loc></url>' for p, _ in LOCALES.values()) + '</urlset>\n')
+(PUBLIC / 'robots.txt').write_text('# Static site only — no backend, no database, no admin panel. Vulnerability scanners won\'t find anything here.\n'
+                                  '# 纯静态站点，无后端、无数据库、无后台，恶意扫描器请勿白费力气。\n'
+                                  f'User-agent: *\nAllow: /\nSitemap: {BASE}sitemap.xml\n')
+(PUBLIC / 'sitemap.xml').write_text('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + ''.join(f'<url><loc>{BASE + p}</loc><lastmod>{SITEMAP_LASTMOD}</lastmod></url>' for p, _ in LOCALES.values()) + '</urlset>\n')
 (PUBLIC / '_redirects').write_text('/favicon.ico /assets/favicon.svg 301\n/cn/index.html /zh-hans/ 301\n/en/index.html / 301\n/cn /zh-hans/ 301\n/cn/ /zh-hans/ 301\n/en / 301\n/en/ / 301\n/index.html / 301\n/zh-hant/index.html /zh-hant/ 301\n/zh-hans/index.html /zh-hans/ 301\n')
 (PUBLIC / '_headers').write_text('''/*
   X-Content-Type-Options: nosniff

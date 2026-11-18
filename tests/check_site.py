@@ -10,7 +10,10 @@ DIST = ROOT / 'dist'
 BASE = 'https://www.leosoffice.com/'
 LOCALES = {'en': '', 'zh-Hant': 'zh-hant/', 'zh-Hans': 'zh-hans/'}
 SPACE_URLS = ['https://www.leoknox.dev/', 'https://www.leoknox.me/', 'https://aploa.com/', 'https://agent.leoknox.us/']
+SAME_AS = ['https://t.me/leospmbot', 'https://www.leoknox.dev/', 'https://www.leoknox.me/', 'https://aploa.com/', 'https://github.com/realLeoKnox']
 headers = (DIST / '_headers').read_text()
+# Cloudflare rejects _headers lines over 2,000 characters (CSP hash list grows).
+assert all(len(line) < 2000 for line in headers.splitlines()), 'header line too long'
 
 
 class Page(HTMLParser):
@@ -51,11 +54,15 @@ for lang, prefix in LOCALES.items():
     assert [s['url'] for s in data['spaces']] == SPACE_URLS and all(s['label'] and s['name'] and s['description'] for s in data['spaces'])
     # The same four doors as static cards (no-JS path).
     assert [a['href'] for t, a in page.nodes if t == 'a' and 'space-card' in a.get('class', '')] == SPACE_URLS
-    assert 'https://t.me/leospmbot' in source and 'realLeoKnox' not in source
+    assert 'https://t.me/leospmbot' in source
     assert 'href="https://leoknox.dev/"' not in source and 'href="https://leoknox.me/"' not in source
-    assert 'mailto:leo@leosoffice.com' in source and 'https://github.com/' not in source
+    assert 'mailto:leo@leosoffice.com' in source
+    # GitHub is only a profile in sameAs, not a visible link on the page.
+    assert 'href="https://github.com/' not in source and source.count('github.com/realLeoKnox') == 1
     ld = re.search(r'<script type="application/ld\+json">(.*?)</script>', source)[1]
     schema = json.loads(ld); assert schema['inLanguage'] == lang and schema['url'] == BASE + prefix
+    assert schema['mainEntity']['@type'] == 'Person' and schema['mainEntity']['url'] == BASE
+    assert schema['mainEntity']['sameAs'] == SAME_AS, schema['mainEntity']['sameAs']
     assert "'sha256-" + base64.b64encode(hashlib.sha256(ld.encode()).digest()).decode() + "'" in headers
     assert not re.search(r'<script(?![^>]*(?:src=|type="application/ld\+json"))[^>]*>', source), 'no inline executable scripts (CSP)'
     assert not re.search(r'\sstyle="', source), 'no inline style attributes (CSP)'
@@ -67,12 +74,18 @@ assert 'content="noindex"' in notfound and 'leo@leosoffice.com' in notfound
 assert not re.search(r'(href|src)="\./', notfound), '404 must use root-absolute refs'
 refs += check_refs(DIST / '404.html', Page(notfound))
 assert "'unsafe-inline'" not in headers and 'X-Frame-Options: DENY' in headers
+robots = (DIST / 'robots.txt').read_text()
+assert 'Disallow: /' not in robots and 'User-agent: *' in robots and 'Allow: /' in robots
+assert f'Sitemap: {BASE}sitemap.xml' in robots
 assert '/static/*\n  Cache-Control: public, max-age=31536000, immutable' in headers
 redirects = (DIST / '_redirects').read_text()
 for rule in ['/cn/index.html /zh-hans/ 301', '/en/index.html / 301', '/cn/ /zh-hans/ 301', '/favicon.ico /assets/favicon.svg 301']:
     assert rule in redirects, rule
 urls = {el.text for el in ET.parse(DIST / 'sitemap.xml').findall('.//{*}loc')}
 assert urls == {BASE + p for p in LOCALES.values()}
+lastmods = {el.text for el in ET.parse(DIST / 'sitemap.xml').findall('.//{*}lastmod')}
+assert len(lastmods) == 1 and re.fullmatch(r'\d{4}-\d{2}-\d{2}', next(iter(lastmods))), lastmods
+assert 'noindex' not in (DIST / 'sitemap.xml').read_text() and set(re.findall(r'<loc>([^<]+)</loc>', (DIST / 'sitemap.xml').read_text())) == urls
 assert hashlib.sha256((DIST / 'assets/leo-avatar.jpg').read_bytes()).hexdigest() == '556fe9ed8c86cc3bb46ad8954ec18937a993bfbdb2ab2880ac45d36db2a62c54'
 zh = (DIST / 'zh-hans/index.html').read_text()
 assert '从好奇出发，' in zh and '连接无限可能。' in zh and '保持独立，认真创造，也给未来留一点想象空间。' in zh

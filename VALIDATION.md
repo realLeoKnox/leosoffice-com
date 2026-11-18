@@ -63,3 +63,13 @@ node --input-type=module --check < assets/scene.js
 - 标签防重叠（同一高度相近的标签左右错开）+ 锚点上下错落；1288/1440/390 三种尺寸标签重叠数 0。
 - 头像做成 3D 拍立得（"Leo was here."）钉在左墙软木板上；HTML 贴纸在 3D 模式下隐藏，无 WebGL 时保留。
 - 镜头停稳后吸附到目标并停止渲染（空闲 1.5 秒内 0 次绘制）。
+
+## 2026-11-18 结构化数据 sameAs 补全与 sitemap lastmod
+
+- `Person.sameAs` 由 3 条补到 5 条：Telegram `https://t.me/leospmbot`、`https://www.leoknox.dev/`、`https://www.leoknox.me/`、`https://aploa.com/`、`https://github.com/realLeoKnox`。三语页面与 404 同步重渲染；404 仍不带 JSON-LD（noindex）。
+- 规范域核查（普通桌面 Chrome UA，`curl -sI`）：`leosoffice.com` 301→`www.leosoffice.com`；`leoknox.dev`、`leoknox.me` 的裸域 301 到 `www`；`aploa.com` 与 `www.aploa.com` 都是 200、无跳转，但两边的 canonical 与 `og:url` 都写 `https://aploa.com/`，故 aploa 用裸域。`agent.leoknox.us` 根路径 200（HEAD 返回 404，GET 正常）。页面上现有可见外链已与各自规范域一致，未改动排版与文案。
+- `sitemap.xml`：三条 URL 均补 `<lastmod>2026-11-18</lastmod>`（ISO 日期，来自 `scripts/build.py` 的 `SITEMAP_LASTMOD`），仍只有 `/`、`/zh-hant/`、`/zh-hans/`，不含 404 或旧路径。
+- `robots.txt`：`User-agent: *` / `Allow: /` / `Sitemap: https://www.leosoffice.com/sitemap.xml`，无 `Disallow`。`_headers` 最长行 384 字符（CSP 哈希列表），远低于 Cloudflare 的 2,000 字符上限；JSON-LD 变更后三个 `sha256-` 哈希已重新生成并与页面一致。
+- 本地校验：`python3 scripts/build.py` 可重复（渲染结果与仓库内文件一致）；`tests/check_site.py` 全部通过（新增 sameAs 五条、sitemap lastmod、robots、`_headers` 行长断言）。
+- 校验边界：本机无 Node.js，未跑 `vite build`，`dist/` 是用 `public/` + 渲染后的 HTML 模拟（`/src/main.js` 换成占位 `/static/*.js`）后跑测试；真实构建与 CSP 响应头由 Cloudflare Workers Builds 在生产验证。
+- 外部链接实查（2026-11-18）：`t.me/leospmbot`、NodeSeek、`leoknox.dev`、`leoknox.me`、`aploa.com`、`agent.leoknox.us`、`github.com/realLeoKnox`、`key.leoknox.de` 均 200；`image.nimama.de` 仍 525、`wp.leoknox.de` 仍连不上（沿用原站书签，未改动）。
