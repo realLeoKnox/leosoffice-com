@@ -49,4 +49,4 @@ npx wrangler dev   # 用 Cloudflare 的方式本地运行 dist/（_headers、_re
 
 `/` 英文，`/zh-hant/` 繁體，`/zh-hans/` 简体；各自 canonical、互相对应的 hreflang 与 x-default、Open Graph / Twitter、1200×630 分享图、ProfilePage / Person JSON-LD；robots、sitemap（含 `<lastmod>`）、noindex 404。浏览器语言只显示切换建议，不强制跳转。
 
-`Person.sameAs` 列同一人名的公开档案：Telegram `@leospmbot`、`www.leoknox.dev`、`www.leoknox.me`、`aploa.com`（裸域为规范域，`www` 无跳转但统一 canonical 到裸域）、`github.com/realLeoKnox`。其中 GitHub 只出现在结构化数据里，页面上没有外链按钮。`scripts/build.py` 里的 `SITEMAP_LASTMOD` 在页面可见内容变化时手动更新，不要每次构建都改。
+`Person.alternateName` 列出同一人的其他名字（`Leo` / `LeoKnox` / `leoknox`），`Person.sameAs` 列同一人名的公开档案：Telegram `@leospmbot`、`www.leoknox.dev`、`www.leoknox.me`、`aploa.com`（裸域为规范域，`www` 无跳转但统一 canonical 到裸域）、`github.com/realLeoKnox`。其中 GitHub 只出现在结构化数据里，页面上没有外链按钮。`scripts/build.py` 里的 `SITEMAP_LASTMOD` 在页面可见内容变化时手动更新，不要每次构建都改。

@@ -26,6 +26,8 @@ GITHUB = 'https://github.com/realLeoKnox'
 # Canonical hosts were checked: leoknox.dev / leoknox.me serve on www. only (apex 301s there),
 # while aploa.com is canonical without www (www.aploa.com 200s but canonicals to the bare host).
 SAME_AS = [TELEGRAM, 'https://www.leoknox.dev/', 'https://www.leoknox.me/', 'https://aploa.com/', GITHUB]
+# Other names the same person is known by (schema.org Person.alternateName).
+ALTERNATE_NAMES = ['Leo', 'LeoKnox', 'leoknox']
 # Bump when the visible content of the three pages changes (sitemap <lastmod>).
 SITEMAP_LASTMOD = '2026-11-18'
 E = html.escape
@@ -69,7 +71,7 @@ hashes = []
 for lang, (prefix, oglocale) in LOCALES.items():
     d = json.loads((ROOT / 'content' / f'{lang}.json').read_text())
     schema = {'@context': 'https://schema.org', '@type': 'ProfilePage', 'url': BASE + prefix, 'name': d['title'], 'description': d['description'], 'inLanguage': lang,
-              'mainEntity': {'@type': 'Person', 'name': 'Leo Knox', 'url': BASE, 'image': BASE + 'assets/leo-avatar.jpg', 'email': 'leo@leosoffice.com',
+              'mainEntity': {'@type': 'Person', 'name': 'Leo Knox', 'alternateName': ALTERNATE_NAMES, 'url': BASE, 'image': BASE + 'assets/leo-avatar.jpg', 'email': 'leo@leosoffice.com',
                              'sameAs': SAME_AS}}
     ld = json.dumps(schema, ensure_ascii=False, separators=(',', ':'))
     hashes.append("'sha256-" + base64.b64encode(hashlib.sha256(ld.encode()).digest()).decode() + "'")

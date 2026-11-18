@@ -11,6 +11,7 @@ BASE = 'https://www.leosoffice.com/'
 LOCALES = {'en': '', 'zh-Hant': 'zh-hant/', 'zh-Hans': 'zh-hans/'}
 SPACE_URLS = ['https://www.leoknox.dev/', 'https://www.leoknox.me/', 'https://aploa.com/', 'https://agent.leoknox.us/']
 SAME_AS = ['https://t.me/leospmbot', 'https://www.leoknox.dev/', 'https://www.leoknox.me/', 'https://aploa.com/', 'https://github.com/realLeoKnox']
+ALTERNATE_NAMES = ['Leo', 'LeoKnox', 'leoknox']
 headers = (DIST / '_headers').read_text()
 # Cloudflare rejects _headers lines over 2,000 characters (CSP hash list grows).
 assert all(len(line) < 2000 for line in headers.splitlines()), 'header line too long'
@@ -62,6 +63,7 @@ for lang, prefix in LOCALES.items():
     ld = re.search(r'<script type="application/ld\+json">(.*?)</script>', source)[1]
     schema = json.loads(ld); assert schema['inLanguage'] == lang and schema['url'] == BASE + prefix
     assert schema['mainEntity']['@type'] == 'Person' and schema['mainEntity']['url'] == BASE
+    assert schema['mainEntity']['alternateName'] == ALTERNATE_NAMES, schema['mainEntity'].get('alternateName')
     assert schema['mainEntity']['sameAs'] == SAME_AS, schema['mainEntity']['sameAs']
     assert "'sha256-" + base64.b64encode(hashlib.sha256(ld.encode()).digest()).decode() + "'" in headers
     assert not re.search(r'<script(?![^>]*(?:src=|type="application/ld\+json"))[^>]*>', source), 'no inline executable scripts (CSP)'
